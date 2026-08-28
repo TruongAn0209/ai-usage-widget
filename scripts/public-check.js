@@ -4,7 +4,8 @@ const path = require('path')
 
 const root = path.resolve(__dirname, '..')
 const ignored = new Set(['.git', 'node_modules', 'dist'])
-const required = ['LICENSE', 'PRIVACY.md', 'SECURITY.md', 'README.md']
+const required = ['LICENSE', 'PRIVACY.md', 'SECURITY.md', 'README.md',
+  'apps/macos/package.json', 'apps/windows/package.json', 'site/index.html']
 const forbiddenNames = [/^CODEX_.*\.md$/i, /^\.env(?:\.|$)/i, /^(?:auth|credentials?)\.json$/i]
 const secretPatterns = [
   /sk-[A-Za-z0-9_-]{16,}/,
@@ -13,7 +14,12 @@ const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   /Bearer\s+[A-Za-z0-9._-]{20,}/i,
 ]
-const privatePathPatterns = [/\/Users\/[^/\s]+\//, /[A-Z]:\\(?:Users|02_CLAUDE_WORKSPACE)\\/i]
+const privatePathPatterns = [
+  /\/Users\/[^/\s]+\//,
+  /[A-Z]:\\(?:Users|02_CLAUDE_WORKSPACE)\\/i,
+  /NNA_WORKSPACE/i,
+  /(?:BAO_CAO|CODEX_)[A-Z0-9_-]*\.md/i,
+]
 
 let failed = false
 function fail(message) { failed = true; console.error('❌ ' + message) }

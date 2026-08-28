@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A private desktop widget for AI usage limits on Windows and macOS.">
+  <meta name="theme-color" content="#0b0f18">
+  <meta property="og:title" content="AI Usage Widget">
+  <meta property="og:description" content="See your local AI usage limits without another account or analytics backend.">
+  <title>AI Usage Widget — Windows & macOS</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="#top"><img src="assets/icon.svg" alt=""><span>AI Usage Widget</span></a>
+    <nav aria-label="Main navigation">
+      <a href="#features">Features</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#privacy">Privacy</a>
+      <a class="nav-cta" href="https://github.com/TruongAn0209/ai-usage-widget">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> Open source · local first</div>
+        <h1>Your AI limits,<br><em>always in sight.</em></h1>
+        <p class="lead">A compact desktop widget for Claude, GPT Plus/Codex, Antigravity, Grok,
+          Gemini and OpenRouter. No extra account. No analytics backend.</p>
+        <div class="actions">
+          <a class="button primary" id="download-windows" href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest">
+            <span class="platform-icon">⊞</span><span><small>Download for</small>Windows</span>
+          </a>
+          <a class="button secondary" id="download-macos" href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest">
+            <span class="platform-icon">◆</span><span><small>Download for</small>macOS</span>
+          </a>
+        </div>
+        <p class="release-line"><span id="release-status">Latest release</span> · Community builds are currently unsigned</p>
+      </div>
+
+      <div class="product-stage" aria-label="Preview of AI Usage Widget">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <article class="widget">
+          <header><div><span class="live-dot"></span> AI USAGE</div><span>05:46</span></header>
+          <section>
+            <div class="provider"><span>Claude · IDE</span><strong>21%</strong></div>
+            <div class="bar"><i style="width:21%"></i></div>
+            <div class="meta"><span>5 hour window</span><span>resets in 3h 12m</span></div>
+          </section>
+          <section>
+            <div class="provider"><span>GPT Plus</span><strong>53%</strong></div>
+            <div class="bar cyan"><i style="width:53%"></i></div>
+            <div class="meta"><span>5 hour window</span><span>resets in 1h 40m</span></div>
+          </section>
+          <section>
+            <div class="provider"><span>Antigravity</span><strong>68%</strong></div>
+            <div class="bar violet"><i style="width:68%"></i></div>
+            <div class="meta"><span>local session</span><span>live</span></div>
+          </section>
+          <footer><span>Today</span><strong>2.84M tokens</strong><span>↻</span></footer>
+        </article>
+        <div class="float-card card-local"><b>Local first</b><span>Credentials stay on your device</span></div>
+        <div class="float-card card-live"><b>6 providers</b><span>One calm view</span></div>
+      </div>
+    </section>
+
+    <section class="proof">
+      <span>Works with</span>
+      <b>Claude</b><b>GPT Plus</b><b>Antigravity</b><b>Grok</b><b>Gemini</b><b>OpenRouter</b>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-head"><span>Designed for focus</span><h2>Useful at a glance.<br>Quiet the rest of the time.</h2></div>
+      <div class="feature-grid">
+        <article><span class="num">01</span><h3>Automatic discovery</h3><p>Detects supported CLI and IDE sessions already available on your computer.</p></article>
+        <article><span class="num">02</span><h3>Real usage windows</h3><p>Shows percentages, reset times, warnings and provider-specific limits without calling a model.</p></article>
+        <article><span class="num">03</span><h3>Context, locally</h3><p>Reads local transcripts for session context and today’s activity. Nothing is uploaded to us.</p></article>
+        <article><span class="num">04</span><h3>Make it yours</h3><p>Choose layout, palette, opacity, position, compact mode and which providers appear.</p></article>
+      </div>
+    </section>
+
+    <section class="platform-section" id="platforms">
+      <div>
+        <span class="kicker">Two native builds</span>
+        <h2>At home on Windows<br>and macOS.</h2>
+        <p>Platform-specific credential and process integration lives behind the same compact idea:
+          open the app and let it find what is already signed in.</p>
+      </div>
+      <div class="platform-cards">
+        <article><span class="os">⊞</span><div><h3>Windows 10 / 11</h3><p>x64 installer · bilingual UI · launch at login</p></div><a id="windows-card" href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest">Download →</a></article>
+        <article><span class="os apple">◆</span><div><h3>macOS 12+</h3><p>Apple Silicon + Intel · menu bar · launch at login</p></div><a id="mac-card" href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest">Download →</a></article>
+      </div>
+    </section>
+
+    <section class="privacy-section" id="privacy">
+      <div class="lock">◎</div>
+      <span class="kicker">No hidden backend</span>
+      <h2>Your credentials are not our product.</h2>
+      <p>The app has no telemetry account, ads or analytics server. Provider credentials remain in
+        the desktop main process and are used only with the service that issued them.</p>
+      <div class="privacy-links">
+        <a href="https://github.com/TruongAn0209/ai-usage-widget/blob/main/PRIVACY.md">Read the privacy model</a>
+        <a href="https://github.com/TruongAn0209/ai-usage-widget/blob/main/SECURITY.md">Security policy</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="brand"><img src="assets/icon.svg" alt=""><span>AI Usage Widget</span></div>
+    <p>Community project. Not affiliated with the AI providers it supports.</p>
+    <div><a href="https://github.com/TruongAn0209/ai-usage-widget">Source</a><a href="https://github.com/TruongAn0209/ai-usage-widget/issues">Issues</a><a href="https://github.com/TruongAn0209/ai-usage-widget/blob/main/LICENSE">MIT</a></div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

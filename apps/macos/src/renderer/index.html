@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'" />
+  <link rel="stylesheet" href="themes.css" />
+  <link rel="stylesheet" href="style.css" />
+  <title>AI Usage</title>
+</head>
+<body data-palette="espresso" data-layout="bars">
+  <div id="card">
+    <div id="drag">
+      <span class="dot"></span><span class="title" id="titleText">AI Usage</span><span class="plan" id="plan"></span>
+      <button id="btn-refresh" class="hbtn" title="Làm mới ngay" aria-label="Làm mới ngay">⟳</button>
+      <button id="btn-settings" class="hbtn" title="Cài đặt" aria-label="Cài đặt">⚙</button>
+    </div>
+    <div id="status"></div>
+    <div id="body"><div class="msg">Đang đọc…</div></div>
+    <!-- Panel mở rộng: số phiên/hôm nay. Bố cục "strip" ẩn hẳn phần này cho thật gọn.
+         ★ mục 13: PHẢI là <button> có aria-expanded — trước đây là <div> chỉ nghe 'click', bấm
+         Tab không tới được, đọc màn hình không biết đang mở/đóng. -->
+    <button id="expand" type="button" class="expand-hint" title="Xem thêm" aria-expanded="false">▾</button>
+    <div id="panel"></div>
+    <div id="foot"><span id="updated"></span><span class="spacer"></span><span id="sessions"></span></div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

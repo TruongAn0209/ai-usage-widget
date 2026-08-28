@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand-head">
+        <img class="brand-mark" src="tray.png" alt="AI Usage Widget" />
+        <div>
+          <h1 id="h1Title"></h1>
+          <div class="brand-subtitle" id="brandSubtitle"></div>
+        </div>
+      </div>
+
+      <div id="settingsMode" role="tablist" aria-label="Mức độ cài đặt">
+        <button id="modeCompact" role="tab" type="button"></button>
+        <button id="modeFull" role="tab" type="button"></button>
+      </div>
+
+      <div class="group">
+        <div class="group-title" id="gAppearance"></div>
+
+        <label class="field">
+          <span id="lblLanguage"></span>
+          <select id="lang">
+            <option value="auto"></option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span id="lblLayout"></span>
+          <select id="layout">
+            <option value="compact"></option>
+            <option value="standard"></option>
+            <option value="dashboard"></option>
+            <option value="terminal"></option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span id="lblPalette"></span>
+          <select id="palette">
+            <option value="default"></option>
+            <option value="espresso"></option>
+            <option value="light"></option>
+            <option value="catppuccin"></option>
+            <option value="dracula"></option>
+            <option value="nord"></option>
+            <option value="gruvbox"></option>
+            <option value="claude"></option>
+            <option value="codex"></option>
+            <option value="grok"></option>
+            <option value="gemini"></option>
+            <option value="antigravity"></option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span id="lblPosition"></span>
+          <select id="corner">
+            <option value="top-right"></option>
+            <option value="top-left"></option>
+            <option value="bottom-right"></option>
+            <option value="bottom-left"></option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span id="lblSize"></span>
+          <select id="size">
+            <option value="small"></option>
+            <option value="medium"></option>
+            <option value="large"></option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span><span id="lblOpacity"></span> <b id="opacityVal"></b></span>
+          <input type="range" id="opacity" min="0.4" max="1" step="0.02" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="useAccent" />
+          <span id="lblUseAccent"></span>
+        </label>
+
+        <label class="field">
+          <span id="lblAccent"></span>
+          <input type="color" id="accentColor" />
+        </label>
+
+      </div>
+
+      <div class="group">
+        <div class="group-title" id="gProviders"></div>
+        <div id="providerChecks"></div>
+      </div>
+
+      <div class="group advanced-group">
+        <div class="group-title" id="gDisplay"></div>
+        <label class="check adv"><input type="checkbox" id="showContextBar" /><span id="lblShowContext"></span></label>
+        <label class="check adv"><input type="checkbox" id="showSessions" /><span id="lblShowSessions"></span></label>
+        <label class="check adv"><input type="checkbox" id="showTodayDetails" /><span id="lblShowToday"></span></label>
+        <label class="check adv"><input type="checkbox" id="showForecast" /><span id="lblShowForecast"></span></label>
+        <div class="live-hint adv" id="forecastHint"></div>
+        <label class="field adv">
+          <span id="lblMaxSessions"></span>
+          <input type="number" id="maxSessions" min="1" max="12" />
+        </label>
+      </div>
+
+      <div class="group">
+        <div class="group-title" id="gAlerts"></div>
+        <label class="check"><input type="checkbox" id="alertsEnabled" /><span id="lblAlertsEnabled"></span></label>
+        <label class="field">
+          <span id="lblAlertWarn"></span>
+          <input type="number" id="alertWarnPct" min="10" max="99" />
+        </label>
+        <label class="field">
+          <span id="lblAlertCrit"></span>
+          <input type="number" id="alertCritPct" min="20" max="100" />
+        </label>
+        <div class="live-hint" id="alertHint"></div>
+      </div>
+
+      <div class="group advanced-group">
+        <div class="group-title adv" id="gData"></div>
+        <label class="field adv">
+          <span id="lblContextLimit"></span>
+          <input type="number" id="contextLimit" min="100000" step="100000" />
+        </label>
+        <label class="field adv">
+          <span id="lblSessionActive"></span>
+          <input type="number" id="sessionActive" min="5" max="180" />
+        </label>
+      </div>
+
+      <div class="group">
+        <div class="group-title" id="gSystem"></div>
+        <label class="check"><input type="checkbox" id="autostart" /><span id="lblAutostart"></span></label>
+        <label class="field adv">
+          <span id="lblHotkey"></span>
+          <input type="text" id="hotkeyToggle" placeholder="Control+Alt+U" spellcheck="false" />
+        </label>
+        <div class="live-hint adv" id="hotkeyHint"></div>
+        <div class="live-hint adv" id="hotkeyBad" style="display: none; color: var(--crit, #e06c75)"></div>
+      </div>
+
+      <div class="live-hint" id="liveHint"></div>
+
+      <div class="actions">
+        <button id="resetBtn" class="ghost"></button>
+        <span class="saved" id="savedMsg"></span>
+      </div>
+    </div>
+    <script src="settings.js"></script>
+  </body>
+</html>
+

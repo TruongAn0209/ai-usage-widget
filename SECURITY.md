@@ -1,20 +1,25 @@
-# Bảo mật
+# Security policy
 
-## Báo lỗi
+## Report a vulnerability
 
-Không đăng token, credential, transcript hoặc ảnh có dữ liệu riêng tư vào issue công khai. Hãy mở
-GitHub Security Advisory riêng tại mục **Security → Report a vulnerability** của kho mã.
+Please use **Security → Report a vulnerability** in this repository. Do not open a public issue
+containing credentials, transcripts, account details or private screenshots.
 
-Kèm phiên bản app, phiên bản macOS, cách tái hiện và log đã che bí mật. Không gửi file
-`auth.json`, `.credentials.json`, `.env` hoặc nội dung Keychain.
+Include the app version, operating system, reproduction steps and redacted logs. Never attach
+`auth.json`, `.credentials.json`, `.env`, Keychain exports or real access/refresh tokens.
 
-## Mô hình bảo mật
+## Security model
 
-- Hai cửa sổ Electron bật `contextIsolation`, `sandbox`, tắt `nodeIntegration` và dùng CSP chỉ cho
-  tài nguyên cục bộ.
-- Cửa sổ widget không có quyền ghi cấu hình; IPC kiểm đúng trang gửi yêu cầu.
-- Credential chỉ được đọc tại tiến trình chính, không chuyển sang giao diện.
-- App không tự làm mới token và không ghi ngược vào nơi CLI/IDE lưu đăng nhập.
+- Renderer windows use context isolation, sandboxing and disabled Node integration.
+- Windows cannot open arbitrary new pages; navigation is denied.
+- Sensitive IPC mutations validate the sending local page and sanitize settings.
+- Credentials stay in the main process and are not exposed through the preload bridge.
+- The repository’s public-safety check blocks common credential formats and personal paths.
+- CI tests Windows and macOS independently and runs dependency audits.
 
-Các API hạn mức của nhà cung cấp có thể thay đổi mà không báo trước. Lỗi API nên làm provider báo
-lỗi, không được khiến app lộ credential hoặc tự chuyển sang endpoint khác.
+Provider usage endpoints can change without notice. A provider error must stay isolated and must
+never cause credentials to be logged or sent to an alternate service.
+
+## Supported versions
+
+Security fixes target the latest GitHub Release. Older unsigned test builds are not supported.

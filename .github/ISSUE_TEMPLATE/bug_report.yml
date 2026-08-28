@@ -12,10 +12,20 @@ body:
       label: Phiên bản app
     validations:
       required: true
-  - type: input
-    id: macos
+  - type: dropdown
+    id: platform
     attributes:
-      label: Phiên bản macOS và loại chip
+      label: Nền tảng
+      options:
+        - Windows 10/11 x64
+        - macOS Apple Silicon
+        - macOS Intel
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: Phiên bản hệ điều hành
     validations:
       required: true
   - type: textarea

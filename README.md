@@ -1,89 +1,114 @@
-# AI Usage Widget for macOS
+<div align="center">
+  <img src="site/assets/icon.svg" width="104" alt="AI Usage Widget icon">
+  <h1>AI Usage Widget</h1>
+  <p>A private, always-visible usage monitor for your local AI subscriptions.</p>
+  <p>
+    <a href="https://github.com/TruongAn0209/ai-usage-widget/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/TruongAn0209/ai-usage-widget/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/TruongAn0209/ai-usage-widget?display_name=tag"></a>
+    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-4f8cff.svg"></a>
+    <img alt="Windows and macOS" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-171b26.svg">
+  </p>
+  <p>
+    <a href="https://truongan0209.github.io/ai-usage-widget/"><strong>Product page</strong></a>
+    · <a href="https://github.com/TruongAn0209/ai-usage-widget/releases/latest">Download</a>
+    · <a href="SECURITY.md">Security</a>
+    · <a href="PRIVACY.md">Privacy</a>
+  </p>
+</div>
 
-Widget nổi trên macOS để xem nhanh hạn mức đã dùng của Claude, GPT Plus/Codex, Antigravity,
-Grok và OpenRouter. Ứng dụng đọc phiên đăng nhập có sẵn trên máy; không có máy chủ trung gian và
-không tự làm mới hay ghi lại token.
+---
 
-> Dự án cộng đồng, không phải sản phẩm chính thức của Anthropic, OpenAI, Google, xAI hoặc
-> OpenRouter. Tên và nhãn hiệu thuộc về chủ sở hữu tương ứng.
+AI Usage Widget stays above your work and shows usage windows, reset times, local session context
+and today’s activity without a separate account or analytics backend. It detects supported AI
+tools already signed in on your computer.
 
-## Tính năng
+> Community project. Not affiliated with Anthropic, OpenAI, Google, xAI or OpenRouter.
 
-- Hiển thị phần trăm đã dùng, thời gian đặt lại và cảnh báo 80%/95%.
-- Năm bố cục, tám bảng màu, độ trong và vị trí tùy chỉnh.
-- Thống kê ngữ cảnh Claude Code, token hôm nay từ CLI và Claude Desktop/IDE.
-- Tự phát hiện nguồn đã đăng nhập; provider không có trên máy sẽ không được gọi.
-- Chạy ở thanh menu, có phím tắt, khóa vị trí và tùy chọn mở cùng macOS.
-- Giao diện Electron cách ly, không tải nội dung web vào cửa sổ.
+## Highlights
 
-Giao diện hiện dùng tiếng Việt.
+- Windows 10/11 and macOS 12+.
+- Claude, GPT Plus/Codex, Antigravity, Grok and OpenRouter; Gemini is also available on Windows.
+- Claude CLI and Claude Desktop/IDE discovery, including the IDE usage fallback.
+- Five layouts, multiple palettes, opacity, screen position and always-on-top controls.
+- Usage warnings, reset countdowns and a local session/context view.
+- No telemetry, advertising, analytics account or intermediary server.
+- Credentials stay in the main process and are sent only to their issuing provider.
 
-## Nguồn dữ liệu
+## Platform support
 
-| Nguồn | Credential cục bộ | Nơi app hỏi hạn mức |
-|---|---|---|
-| Claude | OAuth Claude Code; dự phòng lịch sử hạn mức cục bộ của Claude Desktop/IDE | Anthropic hoặc cache IDE |
-| GPT Plus/Codex | `~/.codex/auth.json` | ChatGPT |
-| Antigravity | Không đọc token; nói chuyện với tiến trình `agy` | `127.0.0.1` |
-| Grok | `~/.grok/auth.json` | Grok |
-| OpenRouter | Biến môi trường hoặc file cấu hình riêng | OpenRouter |
+| Provider | Windows | macOS | Local source |
+|---|:---:|:---:|---|
+| Claude Code + Desktop/IDE | ✓ | ✓ | Claude credential store, transcripts and IDE usage history |
+| GPT Plus / Codex | ✓ | ✓ | `~/.codex/auth.json` |
+| Antigravity | ✓ | ✓ | Local `agy` process over loopback |
+| Grok | ✓ | ✓ | Grok CLI credential store |
+| OpenRouter | ✓ | ✓ | Environment or dedicated local config |
+| Gemini | ✓ | — | Gemini CLI credential store |
 
-Chi tiết đầy đủ về file được đọc và kết nối mạng nằm trong [PRIVACY.md](PRIVACY.md).
+Provider usage endpoints are not guaranteed public APIs and may change. A provider failure is
+isolated and shown without breaking the rest of the widget.
 
-Các API hạn mức của Claude, ChatGPT và Grok không phải API ổn định dành riêng cho ứng dụng bên
-thứ ba. Chúng có thể đổi; khi đó provider tương ứng sẽ báo lỗi cho tới khi dự án được cập nhật.
+## Install
 
-## Cài đặt
+Download the latest files from [GitHub Releases](https://github.com/TruongAn0209/ai-usage-widget/releases/latest):
 
-### Từ mã nguồn
+- **Windows x64:** run the `Windows-x64-Setup.exe` installer.
+- **Apple Silicon:** open the `macOS-arm64.dmg`.
+- **Intel Mac:** open the `macOS-x64.dmg`.
 
-Yêu cầu macOS 12 trở lên, Node.js 20.18.1 trở lên và npm.
+Current community builds are unsigned. Windows SmartScreen or macOS Gatekeeper may therefore ask
+for confirmation. See the release notes before continuing. Signed and notarized distribution is
+tracked separately.
+
+## Repository layout
+
+```text
+apps/
+  macos/      Electron app and macOS-specific credential/process integration
+  windows/    Electron app and Windows-specific credential/process integration
+site/         GitHub Pages product and download page
+.github/      CI, Pages deployment, dependency updates and tagged releases
+```
+
+## Development
+
+Node.js 22 is recommended.
 
 ```bash
-git clone https://github.com/TruongAn0209/claude-usage-widget-mac.git
-cd claude-usage-widget-mac
+# macOS
+cd apps/macos
+npm ci
+npm test
+npm start
+
+# Windows (PowerShell)
+cd apps/windows
 npm ci
 npm test
 npm start
 ```
 
-### Bản DMG
-
-Chỉ tải artifact từ trang Releases của đúng kho này và đối chiếu SHA-256 trong ghi chú phát hành.
-Bản ký ad-hoc có thể bị Gatekeeper cảnh báo; bản phát hành rộng nên được ký Developer ID và
-notarize bởi Apple.
-
-## OpenRouter
-
-Ứng dụng đóng gói không luôn nhận biến môi trường của Terminal. Có thể tạo file riêng:
+Build commands:
 
 ```bash
-mkdir -p "$HOME/.config/ai-usage-widget"
-printf 'OPENROUTER_API_KEY=%s\n' 'dán-key-vào-đây' > "$HOME/.config/ai-usage-widget/openrouter.env"
-chmod 600 "$HOME/.config/ai-usage-widget/openrouter.env"
+# Run on macOS; produces Intel and Apple Silicon DMGs
+cd apps/macos && bash build-mac.sh
+
+# Run on Windows; produces the x64 installer
+cd apps/windows && npm run dist:win
 ```
 
-File này đã nằm ngoài kho Git. Không gửi hoặc commit nó.
+Every pull request runs the public-safety scan and platform tests. Version tags matching `v*`
+build both platforms and publish a GitHub Release.
 
-## Phát triển và kiểm thử
+## Trust and privacy
 
-```bash
-npm ci
-npm audit
-npm test
-bash build-mac.sh
-```
+Read [PRIVACY.md](PRIVACY.md) for every local file and network destination used by the app.
+Please report vulnerabilities privately using [SECURITY.md](SECURITY.md), and never attach real
+credential files or tokens to an issue.
 
-`build-mac.sh` tạo DMG Intel và Apple Silicon trong `dist/`, ký ad-hoc, kiểm chữ ký, kiểm đường
-dẫn máy build và ghi SHA-256. Xem [docs/PUBLISHING.md](docs/PUBLISHING.md) trước khi public binary.
+## Contributing
 
-## Nguyên tắc an toàn
+Bug reports and focused pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
-- Credential chỉ tồn tại ở tiến trình chính và chỉ được gửi tới đúng nhà cung cấp.
-- App không có telemetry, quảng cáo, analytics hoặc backend riêng.
-- File cấu hình xuất ra không chứa token.
-- Không đăng credential/log thật vào issue. Xem [SECURITY.md](SECURITY.md).
-
-## Giấy phép
-
-[MIT](LICENSE). Các nhãn hiệu và dịch vụ bên thứ ba không thuộc giấy phép này.
+Released under the [MIT License](LICENSE).

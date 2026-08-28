@@ -1,0 +1,147 @@
+/* ================= BẢNG MÀU =================
+   Mỗi palette chỉ định nghĩa token màu. Bố cục dùng chung các token này,
+   nên đổi màu không ảnh hưởng bố cục và ngược lại.
+
+   --surface    nền thẻ
+   --surface-2  nền rãnh thanh / vùng chìm
+   --border     viền thẻ
+   --text       chữ chính
+   --text-dim   chữ phụ
+   --accent     tiêu đề / nhấn
+   --ok/--warn/--crit   màu theo mức dùng (<70 / >=70 / >=90)
+   --ctx        thanh context window
+   --scoped     thanh weekly theo model (Fable/Opus...)
+   --btn-text   chữ trên nút nền accent
+============================================== */
+
+/* 1. Mặc định — tối + cyan (bản gốc) */
+body[data-palette='default'] {
+  --surface: #121418;
+  --surface-deep: #0c1020;
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --row-surface: rgba(255, 255, 255, 0.035);
+  --row-border: rgba(126, 170, 255, 0.12);
+  --border: rgba(33, 224, 255, 0.3);
+  --text: #cfd8dc;
+  --text-dim: #7d8791;
+  --accent: #21e0ff;
+  --ok: #2ecc71;
+  --warn: #f1c40f;
+  --crit: #e74c3c;
+  --ctx: #3b82f6;
+  --scoped: #a855f7;
+  --btn-text: #05222b;
+}
+
+/* 2. Espresso — nâu đậm / terracotta / vàng / kem
+   Lưu ý brand guideline: espresso KHÔNG tô mảng lớn -> dùng xám đậm làm nền. */
+body[data-palette='espresso'],
+body[data-palette='nna'] {
+  --surface: #3a342d;
+  --surface-2: rgba(231, 206, 181, 0.16);
+  --border: #b16e4b;
+  --text: #e7ceb5;
+  --text-dim: #a2988a;
+  --accent: #fdcf76;
+  --ok: #80bf8a;
+  --warn: #b16e4b;
+  --crit: #b5482f;
+  --ctx: #60a4bf;
+  --scoped: #fdcf76;
+  --btn-text: #551705;
+}
+
+/* 3. Sáng — nền trắng, hợp desktop nền sáng */
+body[data-palette='light'] {
+  --surface: #ffffff;
+  --surface-2: rgba(0, 0, 0, 0.08);
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --accent: #0969da;
+  --ok: #1a7f37;
+  --warn: #bf8700;
+  --crit: #cf222e;
+  --ctx: #0969da;
+  --scoped: #8250df;
+  --btn-text: #ffffff;
+}
+
+/* 4. Catppuccin Mocha */
+body[data-palette='catppuccin'] {
+  --surface: #1e1e2e;
+  --surface-2: rgba(205, 214, 244, 0.12);
+  --border: rgba(137, 180, 250, 0.35);
+  --text: #cdd6f4;
+  --text-dim: #a6adc8;
+  --accent: #89b4fa;
+  --ok: #a6e3a1;
+  --warn: #f9e2af;
+  --crit: #f38ba8;
+  --ctx: #89b4fa;
+  --scoped: #cba6f7;
+  --btn-text: #1e1e2e;
+}
+
+/* 5. Dracula */
+body[data-palette='dracula'] {
+  --surface: #282a36;
+  --surface-2: rgba(248, 248, 242, 0.12);
+  --border: rgba(189, 147, 249, 0.4);
+  --text: #f8f8f2;
+  --text-dim: #6272a4;
+  --accent: #bd93f9;
+  --ok: #50fa7b;
+  --warn: #ffb86c;
+  --crit: #ff5555;
+  --ctx: #8be9fd;
+  --scoped: #ff79c6;
+  --btn-text: #282a36;
+}
+
+/* 6. Nord */
+body[data-palette='nord'] {
+  --surface: #2e3440;
+  --surface-2: rgba(236, 239, 244, 0.12);
+  --border: rgba(136, 192, 208, 0.4);
+  --text: #eceff4;
+  --text-dim: #81a1c1;
+  --accent: #88c0d0;
+  --ok: #a3be8c;
+  --warn: #ebcb8b;
+  --crit: #bf616a;
+  --ctx: #81a1c1;
+  --scoped: #b48ead;
+  --btn-text: #2e3440;
+}
+
+/* 7. Gruvbox Dark */
+body[data-palette='gruvbox'] {
+  --surface: #282828;
+  --surface-2: rgba(235, 219, 178, 0.14);
+  --border: rgba(131, 165, 152, 0.4);
+  --text: #ebdbb2;
+  --text-dim: #a89984;
+  --accent: #83a598;
+  --ok: #b8bb26;
+  --warn: #fabd2f;
+  --crit: #fb4934;
+  --ctx: #83a598;
+  --scoped: #d3869b;
+  --btn-text: #282828;
+}
+body[data-palette='claude'] {
+  --surface: #211d1a; --surface-deep: #151210; --surface-2: rgba(245,238,229,.1); --row-surface: rgba(245,238,229,.045); --row-border: rgba(217,119,87,.2); --border: rgba(217,119,87,.58); --text: #f5eee5; --text-dim: #b9a99c; --accent: #d97757; --ok: #9ac7a5; --warn: #e6b566; --crit: #ef8067; --ctx: #d9a08b; --scoped: #c5a0d9; --btn-text: #211d1a;
+}
+body[data-palette='codex'] {
+  --surface: #10151c; --surface-deep: #080c11; --surface-2: rgba(180,220,255,.1); --row-surface: rgba(180,220,255,.045); --row-border: rgba(93,196,255,.2); --border: rgba(93,196,255,.55); --text: #e4f1fb; --text-dim: #8da7b9; --accent: #62c7ff; --ok: #65d6a1; --warn: #f0c66a; --crit: #ff7474; --ctx: #62c7ff; --scoped: #a991ff; --btn-text: #07141d;
+}
+body[data-palette='grok'] {
+  --surface: #121212; --surface-deep: #050505; --surface-2: rgba(255,255,255,.09); --row-surface: rgba(255,255,255,.04); --row-border: rgba(255,255,255,.17); --border: rgba(255,255,255,.48); --text: #f7f7f7; --text-dim: #969696; --accent: #fff; --ok: #b7f36b; --warn: #ffd166; --crit: #ff6b6b; --ctx: #9ed8ff; --scoped: #d4b5ff; --btn-text: #101010;
+}
+body[data-palette='gemini'] {
+  --surface: #151a2b; --surface-deep: #0b1020; --surface-2: rgba(175,190,255,.11); --row-surface: rgba(175,190,255,.05); --row-border: rgba(139,168,255,.22); --border: rgba(139,168,255,.54); --text: #e8edff; --text-dim: #9ca9cf; --accent: #a78bfa; --ok: #75e0b0; --warn: #f4c969; --crit: #ff7890; --ctx: #65b8ff; --scoped: #d49cff; --btn-text: #151a2b;
+}
+body[data-palette='antigravity'] {
+  --surface: #121c21; --surface-deep: #091115; --surface-2: rgba(152,246,220,.1); --row-surface: rgba(152,246,220,.045); --row-border: rgba(116,222,199,.22); --border: rgba(116,222,199,.56); --text: #e4fff8; --text-dim: #8eafa9; --accent: #72e0c5; --ok: #9ee493; --warn: #f3cb70; --crit: #ff8078; --ctx: #6fc7ff; --scoped: #c7a3ff; --btn-text: #0d2522;
+}

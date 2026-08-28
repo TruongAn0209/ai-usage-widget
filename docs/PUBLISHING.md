@@ -1,59 +1,44 @@
-# Phát hành công khai
+# Publishing
 
-## 1. Tạo kho Git riêng
+Tagged releases are built by `.github/workflows/release.yml` on native Windows and macOS runners.
+GitHub Pages is deployed independently from `site/`.
 
-Không đẩy thư mục này bằng lịch sử của kho làm việc chung. Tạo kho mới và chỉ sao chép cây nguồn
-hiện tại để lịch sử nội bộ không đi theo:
-
-```bash
-rsync -a --exclude node_modules --exclude dist --exclude .git \
-  ./claude-usage-widget-mac/ /đường/dẫn/claude-usage-widget-mac/
-cd /đường/dẫn/claude-usage-widget-mac
-git init
-git add .
-npm ci
-npm audit
-npm test
-git commit -m "Initial public release"
-```
-
-Chạy `git status --ignored` và `npm run check:public` trước khi thêm remote.
-
-## 2. Ký ứng dụng
-
-`build-mac.sh` chỉ ký ad-hoc để kiểm thử nội bộ. Phát hành rộng cần:
-
-1. Tài khoản Apple Developer và chứng chỉ Developer ID Application.
-2. Hardened Runtime.
-3. Notarization và staple cho cả DMG Intel lẫn Apple Silicon.
-4. Kiểm `codesign --verify --deep --strict` và `spctl --assess` trên máy sạch.
-
-Không đưa certificate, file `.p12`, mật khẩu Apple hoặc khóa notarization vào GitHub. Chỉ lưu
-trong GitHub Actions Secrets nếu sau này thiết lập luồng ký tự động.
-
-## 3. Kiểm trước khi tạo Release
+## Before tagging
 
 ```bash
-npm ci
-npm audit --audit-level=high
-npm test
-bash build-mac.sh
-shasum -a 256 dist/*.dmg
+node scripts/public-check.js
+cd apps/macos && npm ci && npm audit --audit-level=high && npm test
+cd ../windows && npm ci && npm audit --audit-level=high && npm test
 ```
 
-Cài và thử đúng các ca sau trên một tài khoản macOS sạch:
+Also verify:
 
-- Intel và Apple Silicon.
-- Chưa đăng nhập provider nào.
-- Chỉ đăng nhập Claude Desktop; chỉ Claude CLI; cả hai cùng chạy.
-- Bật/tắt mở cùng macOS.
-- Từ chối quyền Automation rồi mở lại app.
-- Mất mạng, token hết hạn và provider trả 429.
+- No remote points to an internal monorepo.
+- README, privacy and security documents match current behavior.
+- Windows, Apple Silicon and Intel artifact names match the download-page patterns.
+- No certificate, `.p12`, Apple password, notarization key or Windows signing key is tracked.
 
-## 4. Nội dung Release
+## Release
 
-- DMG đúng hai kiến trúc.
-- SHA-256.
-- Thay đổi từ `CHANGELOG.md`.
-- Phiên bản macOS tối thiểu.
-- Nêu rõ đây là dự án cộng đồng và API nhà cung cấp có thể thay đổi.
+1. Update both app versions and `CHANGELOG.md`.
+2. Commit to `main` and wait for CI.
+3. Create and push `vX.Y.Z`.
+4. Wait for the Release workflow to build both platforms and publish the assets.
+5. Verify checksums and install on clean Windows and macOS machines.
+
+## Signing
+
+Current community artifacts are unsigned.
+
+Production macOS distribution requires Developer ID Application signing, Hardened Runtime,
+notarization and stapling. Production Windows distribution requires an appropriate code-signing
+certificate. Store signing material only in protected GitHub Actions secrets.
+
+## Manual acceptance
+
+- Fresh machine with no providers signed in.
+- Claude Desktop/IDE only, Claude CLI only, and both together.
+- Codex IDE/CLI, Antigravity running/stopped, and provider network failures.
+- Launch at login on both systems.
+- Windows x64, Apple Silicon and Intel macOS.
+- Page download buttons resolve to the matching Release assets.

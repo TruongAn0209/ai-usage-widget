@@ -1,8 +1,9 @@
-node_modules/
-dist/
+**/node_modules/
+**/dist/
 .DS_Store
 *.log
 *.dmg
+*.exe
 *.blockmap
 .env
 .env.*
@@ -13,3 +14,6 @@ dist/
 auth.json
 credentials.json
 .credentials.json
+coverage/
+.idea/
+.vscode/

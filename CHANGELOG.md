@@ -2,6 +2,11 @@
 
 ## 1.4.1 — 2026-08-29
 
+- Hợp nhất mã Windows và macOS trong một kho công khai độc lập.
+- Thêm Claude Desktop/IDE fallback cho cả hai nền tảng.
+- Nâng Electron/electron-builder của Windows và xử lý toàn bộ cảnh báo phụ thuộc đã biết.
+- Thêm CI hai hệ điều hành, Release tự động và GitHub Pages.
+- Chuẩn hóa thương hiệu, quyền riêng tư, bảo mật và tài liệu đóng góp.
 - Khi OAuth Claude Code hết hạn hoặc không có, tự đọc hạn mức mới nhất do Claude Desktop/IDE lưu.
 - Chỉ dùng mẫu IDE trong 30 phút để không hiện nhầm số cũ.
 

@@ -1,0 +1,65 @@
+{
+  "name": "ai-usage-widget-windows",
+  "version": "1.4.1",
+  "description": "Widget Windows theo dõi hạn mức AI từ các phiên đăng nhập cục bộ.",
+  "main": "src/main.js",
+  "private": true,
+  "author": "Trường An",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TruongAn0209/ai-usage-widget.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TruongAn0209/ai-usage-widget/issues"
+  },
+  "homepage": "https://truongan0209.github.io/ai-usage-widget/",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis --x64",
+    "check:public": "node ../../scripts/public-check.js",
+    "test:syntax": "node scripts/check-syntax.js",
+    "test:unit": "node test/windows-cli-watcher.js && node test/follow-claude-cli-decision.js && node test/claude-desktop.js",
+    "test": "npm run check:public && npm run test:syntax && npm run test:unit"
+  },
+  "build": {
+    "appId": "com.truongan.aiusagewidget",
+    "productName": "AI Usage Widget",
+    "files": [
+      "src/**/*",
+      "config.json",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "src/windowsTerminalState.ps1"
+    ],
+    "extraResources": [
+      "config.json"
+    ],
+    "win": {
+      "icon": "assets/ai-usage-logo.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "AI Usage Widget"
+    },
+    "artifactName": "AI-Usage-Widget-${version}-Windows-${arch}-Setup.${ext}"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  }
+}

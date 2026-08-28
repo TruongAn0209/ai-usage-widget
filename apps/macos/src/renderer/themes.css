@@ -1,0 +1,69 @@
+/* CHỈ MÀU — không có kích thước/bố cục ở file này. Thêm bảng màu = thêm 1 khối [data-palette].
+   Học theo bản Windows: 2 TRỤC ĐỘC LẬP (bố cục ở style.css · màu ở đây), đổi trục này không
+   đụng trục kia. Bản Windows từng gộp 11 "theme" nên rối, đừng lặp lại.
+
+   --surface    nền thẻ            --surface-2  rãnh thanh / vùng chìm
+   --border     viền thẻ           --text/--text-dim  chữ chính / phụ
+   --accent     điểm nhấn          --ok/--warn/--crit  theo mức dùng (<80 / >=80 / >=95)
+   --ctx        thanh ngữ cảnh     --scoped     hạn mức riêng theo model (Fable/Opus…)
+   --btn-text   chữ trên nền accent
+
+   Nền để rgba (không phải hex đặc) vì widget nổi trên nền desktop — bản Windows dùng hex đặc,
+   sang Mac trông nặng hơn hẳn. */
+
+/* 1. Espresso — nền xám đậm, điểm nhấn gold và phụ terracotta. */
+[data-palette="espresso"] {
+  --surface: rgba(58, 52, 45, .92); --surface-2: rgba(231, 206, 181, .16);
+  --border: rgba(231, 206, 181, .22); --text: #F3EADC; --text-dim: #B6A891;
+  --accent: #FDCF76; --ctx: #7FB5A6; --scoped: #B16E4B;
+  --ok: #80BF8A; --warn: #E0A020; --crit: #E2604A; --btn-text: #551705;
+}
+/* 2. Tối trung tính */
+[data-palette="dark"] {
+  --surface: rgba(28, 30, 34, .92); --surface-2: rgba(255,255,255,.10);
+  --border: rgba(255,255,255,.14); --text: #E8EAED; --text-dim: #9AA0A6;
+  --accent: #8AB4F8; --ctx: #7FD1B9; --scoped: #C58AF9;
+  --ok: #7FD1B9; --warn: #F5C043; --crit: #F2705B; --btn-text: #10131a;
+}
+/* 3. Sáng */
+[data-palette="light"] {
+  --surface: rgba(252, 251, 248, .95); --surface-2: rgba(0,0,0,.09);
+  --border: rgba(0,0,0,.13); --text: #22262B; --text-dim: #6B7280;
+  --accent: #B16E4B; --ctx: #2F8F79; --scoped: #7C5AC2;
+  --ok: #1A7F37; --warn: #B7791F; --crit: #C0392B; --btn-text: #ffffff;
+}
+/* 4. Cyan — tối + cyan */
+[data-palette="default"] {
+  --surface: rgba(18, 20, 24, .93); --surface-2: rgba(255,255,255,.08);
+  --border: rgba(33, 224, 255, .30); --text: #CFD8DC; --text-dim: #7D8791;
+  --accent: #21E0FF; --ctx: #3B82F6; --scoped: #A855F7;
+  --ok: #2ECC71; --warn: #F1C40F; --crit: #E74C3C; --btn-text: #05222B;
+}
+/* 5. Catppuccin Mocha */
+[data-palette="catppuccin"] {
+  --surface: rgba(30, 30, 46, .93); --surface-2: rgba(205, 214, 244, .12);
+  --border: rgba(137, 180, 250, .35); --text: #CDD6F4; --text-dim: #A6ADC8;
+  --accent: #89B4FA; --ctx: #89B4FA; --scoped: #CBA6F7;
+  --ok: #A6E3A1; --warn: #F9E2AF; --crit: #F38BA8; --btn-text: #1E1E2E;
+}
+/* 6. Dracula */
+[data-palette="dracula"] {
+  --surface: rgba(40, 42, 54, .93); --surface-2: rgba(248, 248, 242, .12);
+  --border: rgba(189, 147, 249, .40); --text: #F8F8F2; --text-dim: #7C8AC0;
+  --accent: #BD93F9; --ctx: #8BE9FD; --scoped: #FF79C6;
+  --ok: #50FA7B; --warn: #FFB86C; --crit: #FF5555; --btn-text: #282A36;
+}
+/* 7. Nord */
+[data-palette="nord"] {
+  --surface: rgba(46, 52, 64, .93); --surface-2: rgba(236, 239, 244, .12);
+  --border: rgba(136, 192, 208, .40); --text: #ECEFF4; --text-dim: #8FA6C4;
+  --accent: #88C0D0; --ctx: #81A1C1; --scoped: #B48EAD;
+  --ok: #A3BE8C; --warn: #EBCB8B; --crit: #BF616A; --btn-text: #2E3440;
+}
+/* 8. Gruvbox Dark */
+[data-palette="gruvbox"] {
+  --surface: rgba(40, 40, 40, .93); --surface-2: rgba(235, 219, 178, .14);
+  --border: rgba(131, 165, 152, .40); --text: #EBDBB2; --text-dim: #A89984;
+  --accent: #83A598; --ctx: #83A598; --scoped: #D3869B;
+  --ok: #B8BB26; --warn: #FABD2F; --crit: #FB4934; --btn-text: #282828;
+}

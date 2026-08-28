@@ -1,19 +1,29 @@
-# Đóng góp
+# Contributing
 
-Yêu cầu: macOS, Node.js 20.18.1 trở lên và npm.
+Focused bug reports and pull requests are welcome.
+
+## Requirements
+
+- Node.js 22.12 or newer.
+- npm.
+- macOS for the macOS app, or Windows for full Windows integration testing.
+
+## Setup
 
 ```bash
+cd apps/macos   # or apps/windows
 npm ci
 npm test
 npm start
 ```
 
-Trước khi gửi pull request:
+Before opening a pull request:
 
-1. Không thêm token, log thật, transcript hay đường dẫn máy cá nhân.
-2. Provider chỉ được đọc credential, không tự làm mới hoặc ghi lại credential.
-3. Mọi dữ liệu từ mạng/đĩa phải được kiểm kiểu trước khi đưa sang giao diện.
-4. Thêm kiểm thử cho lỗi được sửa.
-5. Chạy `npm audit` và `npm test`.
+1. Never add real tokens, credential files, transcripts, logs or personal filesystem paths.
+2. Keep provider failures isolated and validate all disk/network data.
+3. Keep credentials out of renderer processes.
+4. Add a regression test for the behavior changed.
+5. Run `npm audit --audit-level=high`, `npm test` and `node ../../scripts/public-check.js`.
+6. Update privacy documentation if a new file, credential store or network destination is used.
 
-Ứng dụng hiện dùng giao diện tiếng Việt. Thay đổi câu chữ cần giữ ngắn để widget không tràn.
+The Windows UI is Vietnamese/English. Keep labels short enough for the compact layouts.

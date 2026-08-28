@@ -1,38 +1,49 @@
-# Quyền riêng tư
+# Privacy
 
-AI Usage Widget không có máy chủ trung gian, tài khoản riêng, quảng cáo hay đo hành vi người dùng.
+AI Usage Widget has no intermediary backend, user account, advertising SDK or behavioral analytics.
 
-## Dữ liệu app đọc
+## Local data the app reads
 
-- Claude Code: thông tin OAuth trong macOS Keychain hoặc `~/.claude/.credentials.json`.
-- Claude Desktop/IDE: bộ đếm token ngày và lịch sử phần trăm hạn mức trong thư mục Application
-  Support của Claude.
-- GPT Plus/Codex: OAuth trong `~/.codex/auth.json`.
-- Grok CLI: OAuth và bản ghi hạn mức gần nhất trong `~/.grok/`.
-- Antigravity: trạng thái hạn mức từ tiến trình cục bộ đang chạy trên `127.0.0.1`.
-- OpenRouter: `OPENROUTER_API_KEY` trong môi trường hoặc file
-  `~/.config/ai-usage-widget/openrouter.env`.
-- Claude Code: transcript cục bộ trong `~/.claude/projects/` để tính ngữ cảnh và thống kê ngày.
+Depending on the enabled provider and operating system, the app may read:
 
-App chỉ đọc các nguồn trên, không sửa hoặc làm mới token. Token không được ghi vào cấu hình, log,
-thông báo hay giao diện.
+- Claude Code OAuth from its credential file or macOS Keychain.
+- Claude Desktop/IDE daily token counts and recent usage history from its Application Support data.
+- Claude Code transcripts under `~/.claude/projects/` for local context and daily activity.
+- GPT Plus/Codex OAuth from `~/.codex/auth.json`.
+- Grok and Gemini CLI credential stores.
+- Antigravity usage from a running local `agy` process on `127.0.0.1`.
+- An OpenRouter key from the environment or the dedicated widget configuration described in each app.
 
-## Kết nối mạng
+Credentials remain in the Electron main process. They are never sent to the renderer, notifications,
+logs, exported widget settings or this project’s maintainers.
 
-Mỗi credential chỉ được gửi thẳng tới dịch vụ đã cấp nó để đọc hạn mức: Anthropic, ChatGPT,
-Grok hoặc OpenRouter. Antigravity chỉ dùng loopback cục bộ. App không gửi dữ liệu tới tác giả.
+## Network connections
 
-## Dữ liệu app ghi
+The app sends each credential only to the provider that issued it, and only to retrieve account
+usage information. Supported destinations are Anthropic, ChatGPT/OpenAI, Google, xAI and
+OpenRouter. Antigravity communication stays on the local loopback interface.
 
-App ghi cấu hình hiển thị và ảnh chụp hạn mức Antigravity gần nhất vào Application Support. File
-cấu hình xuất ra không chứa token. Gỡ app không tự xóa các file này.
+Provider usage endpoints may be undocumented and can change without notice.
 
-## Xóa dữ liệu
+## Credential refresh behavior
 
-Thoát app, rồi xóa thư mục:
+The macOS build is read-only and does not rotate provider credentials. Some providers in the
+Windows build can use the provider’s official OAuth refresh endpoint when a local access token has
+expired; a rotated token is written atomically back to the same local credential store. The app
+does not copy that token anywhere else.
 
-```bash
-rm -r "$HOME/Library/Application Support/claude-usage-widget-mac"
-```
+## Data the app writes
 
-Thao tác này chỉ xóa dữ liệu của widget, không xóa đăng nhập của các CLI/IDE.
+The app writes display preferences and a short-lived Antigravity usage snapshot to its own
+Application Support/AppData directory. Uninstalling the executable may not remove this directory.
+
+The app does not alter local AI transcripts.
+
+## Delete widget data
+
+Quit the app, then remove only the widget directory:
+
+- Windows: `%APPDATA%\ai-usage-widget` or the path shown by the app.
+- macOS: `~/Library/Application Support/ai-usage-widget-mac`.
+
+This does not remove login data owned by any AI CLI or IDE.
