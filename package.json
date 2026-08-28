@@ -1,0 +1,68 @@
+{
+  "name": "claude-usage-widget-mac",
+  "productName": "Claude Usage Widget",
+  "version": "1.4.1",
+  "description": "Widget macOS theo dõi hạn mức AI từ các phiên đăng nhập cục bộ.",
+  "main": "src/main.js",
+  "private": true,
+  "author": "Trường An",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TruongAn0209/claude-usage-widget-mac.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TruongAn0209/claude-usage-widget-mac/issues"
+  },
+  "homepage": "https://github.com/TruongAn0209/claude-usage-widget-mac#readme",
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "scripts": {
+    "start": "electron .",
+    "predist": "npm test",
+    "dist": "electron-builder --mac",
+    "check:public": "node scripts/public-check.js",
+    "audit": "npm audit --audit-level=high",
+    "test:syntax": "for f in $(find src test -name '*.js'); do node --check \"$f\" || exit 1; done",
+    "test:unit": "node test/context-limit.js && node test/config-schema.js && node test/claude-cli-watcher.js && node test/claude.js && node test/antigravity.js && node test/grok.js && node test/openrouter.js && node test/usage-tracker-partial.js && node test/main-logic.js",
+    "test:electron": "node test/run-electron-tests.js",
+    "test": "npm run check:public && npm run test:syntax && npm run test:unit && npm run test:electron"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "vn.ngocnguyenanh.claudeusagewidget",
+    "productName": "Claude Usage Widget",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "minimumSystemVersion": "12.0.0",
+      "extendInfo": {
+        "LSUIElement": true
+      }
+    },
+    "dmg": {
+      "title": "Claude Usage Widget"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

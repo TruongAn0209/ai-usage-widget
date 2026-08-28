@@ -1,0 +1,38 @@
+name: Báo lỗi
+description: Báo lỗi đã che mọi credential và dữ liệu riêng tư
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Không đính kèm token, auth.json, .env, transcript hoặc nội dung Keychain.
+  - type: input
+    id: version
+    attributes:
+      label: Phiên bản app
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: Phiên bản macOS và loại chip
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Cách tái hiện
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kết quả mong đợi
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Kết quả thực tế
+    validations:
+      required: true

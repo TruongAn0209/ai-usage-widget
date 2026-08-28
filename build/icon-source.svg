@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b2f77"/>
+      <stop offset="1" stop-color="#4d5bd1"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd36e"/>
+      <stop offset="1" stop-color="#ff8f5e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Nền vuông-bo kiểu macOS (squircle gần đúng) -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+
+  <!-- Vòng track mờ phía sau -->
+  <circle cx="512" cy="512" r="270" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="46"/>
+
+  <!-- Cung hạn mức "đã dùng" ~72% — cùng ngôn ngữ hình ảnh với icon khay (vòng tròn + kim), nhưng
+       đủ chi tiết cho icon lớn: cung màu ấm trên nền xanh đậm, đọc được ở mọi kích thước. -->
+  <circle cx="512" cy="512" r="270" fill="none" stroke="url(#ring)" stroke-width="46"
+    stroke-linecap="round" stroke-dasharray="1220 1696" transform="rotate(-90 512 512)"/>
+
+  <!-- Kim đồng hồ nhỏ ở tâm — gợi "nhịp làm mới" -->
+  <circle cx="512" cy="512" r="22" fill="#ffffff"/>
+  <path d="M512 512 L512 400" stroke="#ffffff" stroke-width="22" stroke-linecap="round"/>
+  <path d="M512 512 L590 560" stroke="#ffffff" stroke-width="22" stroke-linecap="round"/>
+</svg>

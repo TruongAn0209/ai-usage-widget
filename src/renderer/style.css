@@ -1,0 +1,180 @@
+/* Hình khối. Màu nằm hết ở themes.css theo data-palette — đổi màu không đụng bố cục, và ngược lại.
+   5 bố cục: bars (mặc định) · rings · strip · dashboard · terminal — chọn bằng data-layout trên body. */
+* { box-sizing: border-box; margin: 0; padding: 0 }
+html, body { background: transparent; overflow: hidden;
+  font: 12px/1.35 -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased; user-select: none; cursor: default }
+
+/* --op = độ trong chọn trong Cài đặt (0.15–1). Rê chuột vào thì hiện rõ hẳn để đọc cho dễ,
+   rời chuột ra lại mờ đi — kiểu OSD. Tắt được bằng ô "Rõ lên khi rê chuột". */
+#card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 9px 11px 10px; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,.28);
+  opacity: var(--op, .95); transition: opacity .18s ease }
+body[data-hover-boost="1"] #card:hover { opacity: 1 }
+
+#drag { -webkit-app-region: drag; display: flex; align-items: center; gap: 6px; margin-bottom: 8px }
+#drag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none }
+#drag .title { font-weight: 600; font-size: 11.5px; letter-spacing: .2px; flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+#drag .plan { font-size: 9.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px;
+  max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+#drag .plan.warn { color: var(--warn) }
+
+/* Nhiều AI thì danh sách "Tên · gói" KHÔNG nhét vào thanh tiêu đề nữa — chỗ đó chỉ đủ cho một
+   cái tên, hai cái là bị cắt thành "CLAUDE · MAX COD…". Cho xuống dòng riêng, đủ rộng, tự xuống
+   hàng chứ không cắt chữ. (Bài học cũ từ bản Windows: đừng bao giờ cắt cứng nhãn.) */
+#status { font-size: 9.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px;
+  margin: -3px 0 7px; line-height: 1.5 }
+#status.warn { color: var(--warn) }
+body[data-layout="strip"] #status { display: none }
+
+/* Nút trên thanh tiêu đề. ★ PHẢI có no-drag: cả thanh #drag là vùng kéo cửa sổ, không gỡ ra thì
+   bấm vào nút chỉ kéo được widget chứ không bao giờ nhận cú click. */
+#drag .hbtn { -webkit-app-region: no-drag; flex: none; width: 18px; height: 18px; padding: 0;
+  border: 0; border-radius: 5px; background: transparent; color: var(--text-dim);
+  font-size: 12px; line-height: 18px; text-align: center; cursor: pointer;
+  opacity: .75; transition: background .15s, color .15s, opacity .15s }
+#drag .hbtn:hover { background: rgba(127,127,127,.22); color: var(--text); opacity: 1 }
+#drag .hbtn:active { transform: translateY(.5px) }
+#drag .hbtn.spin { animation: sp .8s linear infinite }
+@keyframes sp { to { transform: rotate(360deg) } }
+/* mục 13: quay SUỐT lúc chờ Promise của "Làm mới ngay" (không còn quay đúng 0,6s cố định), rồi
+   chớp ✓/✗ nhanh khi biết kết quả thật — không rào bằng animation cố định che mất trạng thái. */
+#drag .hbtn:disabled { cursor: default; opacity: .5 }
+#drag .hbtn.flash-ok { color: var(--ok, #3ba55d) }
+#drag .hbtn.flash-partial { color: var(--warn, #d19a32) }
+#drag .hbtn.flash-err { color: var(--crit) }
+
+/* ---------- Bố cục 1: Thanh ngang (mặc định) ---------- */
+.row { margin-bottom: 7px }
+.row:last-child { margin-bottom: 0 }
+.row .head { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px }
+.row .label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; color: var(--text); font-size: 11px }
+.row .pct { flex: none; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 11px }
+
+.bar { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden }
+.bar > i { display: block; height: 100%; border-radius: 3px; background: var(--ok);
+  transition: width .35s ease }
+
+/* Ngưỡng cảnh báo phải THẮNG màu riêng của từng loại → đặt SAU .ctx/.scoped (cùng độ đặc hiệu,
+   lớp sau thắng). Bản Windows từng bị nuốt cảnh báo vì xếp ngược thứ tự này. */
+.bar > i.ctx { background: var(--ctx) }
+.bar > i.scoped { background: var(--scoped) }
+.bar > i.warn { background: var(--warn) }
+.bar > i.crit { background: var(--crit) }
+.pct.ctx { color: var(--ctx) } .pct.scoped { color: var(--scoped) }
+.pct.warn { color: var(--warn) } .pct.crit { color: var(--crit) }
+
+.note { font-size: 9.5px; color: var(--text-dim); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.sep { height: 1px; background: var(--border); margin: 8px 0 7px }
+.msg { font-size: 11px; color: var(--text-dim); padding: 3px 0 1px }
+.msg b { color: var(--warn); font-weight: 600 }
+#foot { display: flex; gap: 6px; margin-top: 8px; font-size: 9.5px; color: var(--text-dim) }
+#foot .spacer { flex: 1 }
+
+/* Nhãn tên AI khi hiện >1 AI cùng lúc — tách các cụm hạn mức cho khỏi trộn vào nhau.
+   Chỉ 1 AI thì renderer KHÔNG chèn phần tử này (giữ gọn như cũ). */
+.group-head { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .6px;
+  margin: 8px 0 4px; padding-top: 6px; border-top: 1px solid var(--surface-2); opacity: .85 }
+.group-head:first-child { margin-top: 0; padding-top: 0; border-top: none }
+
+/* ---------- Bố cục 2: Vòng tròn ---------- */
+.rings { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 2px 0 }
+.ring { text-align: center }
+.ring svg { display: block }
+.ring-cap { font-size: 8.5px; color: var(--text-dim); margin-top: 2px; max-width: 88px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+/* ★ Cung tròn tô bằng STROKE, chữ tô bằng FILL — TUYỆT ĐỐI không gộp 2 loại vào chung một luật.
+   Gộp `.ring-arc.ok { fill: ... }` là cung bị tô đặc thành cái đĩa, mà `.ring-arc { fill: none }`
+   không cứu được vì độ đặc hiệu thấp hơn (0,1,0 thua 0,2,0) — thứ tự dòng không liên quan. */
+.ring-track { stroke: var(--surface-2); fill: none }
+.ring-arc { fill: none }
+.ring-arc.ok { stroke: var(--ok) }
+.ring-arc.ctx { stroke: var(--ctx) }
+.ring-arc.scoped { stroke: var(--scoped) }
+.ring-arc.warn { stroke: var(--warn) }
+.ring-arc.crit { stroke: var(--crit) }
+.ring-num { stroke: none; font-size: 10px; font-weight: 700 }
+.ring-num.ok { fill: var(--ok) }
+.ring-num.ctx { fill: var(--ctx) }
+.ring-num.scoped { fill: var(--scoped) }
+.ring-num.warn { fill: var(--warn) }
+.ring-num.crit { fill: var(--crit) }
+
+/* ---------- Bố cục 3: Dải siêu gọn ---------- */
+body[data-layout="strip"] #card { padding: 6px 10px 7px; border-radius: 8px }
+body[data-layout="strip"] #drag { margin-bottom: 4px }
+body[data-layout="strip"] #foot { display: none }
+.strip { display: flex; align-items: center; gap: 8px }
+.strip-item { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0 }
+.strip-tag { font-size: 8px; color: var(--text-dim); flex: none; max-width: 62px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.strip-track { flex: 1; min-width: 14px; height: 5px; background: var(--surface-2);
+  border-radius: 3px; overflow: hidden }
+.strip-fill { height: 100%; border-radius: 3px; background: var(--ok) }
+.strip-fill.ctx { background: var(--ctx) } .strip-fill.scoped { background: var(--scoped) }
+.strip-fill.warn { background: var(--warn) } .strip-fill.crit { background: var(--crit) }
+.strip-pct { font-size: 10px; font-weight: 700; flex: none; color: var(--ok) }
+.strip-pct.ctx { color: var(--ctx) } .strip-pct.scoped { color: var(--scoped) }
+.strip-pct.warn { color: var(--warn) } .strip-pct.crit { color: var(--crit) }
+
+/* ---------- Bố cục 4: Bảng lớn (2 cột) ---------- */
+.dash { display: flex; gap: 12px }
+.dash-col { flex: 1; min-width: 0 }
+.dash-col + .dash-col { border-left: 1px solid var(--surface-2); padding-left: 12px }
+.dash .row { margin-bottom: 6px }
+
+/* ---------- Bố cục 5: Terminal ---------- */
+body[data-layout="terminal"] #card, body[data-layout="terminal"] #card * {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace }
+.term { font-size: 11px; line-height: 1.7; color: var(--text) }
+.term-prompt { color: var(--accent); font-size: 10.5px; margin-bottom: 3px }
+.term-line { display: flex; gap: 6px; align-items: baseline; white-space: pre }
+/* Nhãn ăn hết chỗ còn lại thay vì bị cắt cứng — tên dài như "Opus · tuần" hiện đủ khi đủ rộng. */
+.term-key { color: var(--text-dim); flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.term-bar { letter-spacing: -.5px; flex: none; color: var(--ok) }
+.term-pct { font-weight: 700; flex: none; min-width: 3.4em; text-align: right; color: var(--ok) }
+.term-bar.ctx, .term-pct.ctx { color: var(--ctx) }
+.term-bar.scoped, .term-pct.scoped { color: var(--scoped) }
+.term-bar.warn, .term-pct.warn { color: var(--warn) }
+.term-bar.crit, .term-pct.crit { color: var(--crit) }
+
+/* ---------- Panel mở rộng (dùng chung mọi bố cục trừ strip) ---------- */
+/* `#expand` là <button> (mục 13 — bàn phím phải bấm được ▾, không chỉ chuột) — reset hết kiểu
+   button mặc định của macOS/Chromium (viền, nền, font) rồi áp lại đúng như div cũ. */
+.expand-hint { all: unset; -webkit-app-region: no-drag; display: block; width: 100%;
+  text-align: center; color: var(--text-dim); font-size: 9.5px; cursor: pointer;
+  padding: 3px 0 1px; opacity: .7 }
+.expand-hint:hover { color: var(--accent); opacity: 1 }
+.expand-hint:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 3px }
+#panel { display: none; margin-top: 5px; padding-top: 7px; border-top: 1px solid var(--surface-2) }
+#panel.open { display: block }
+.section-title { font-size: 9px; color: var(--accent); text-transform: uppercase;
+  letter-spacing: .6px; margin: 5px 0 4px; opacity: .85 }
+.section-title:first-child { margin-top: 0 }
+.stat-line { display: flex; justify-content: space-between; gap: 8px; font-size: 10px;
+  color: var(--text-dim); margin-bottom: 3px }
+.stat-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums }
+.session-row { display: flex; align-items: baseline; gap: 6px; font-size: 10px; margin-bottom: 3px }
+.session-row .sess-proj { flex: 1; min-width: 0; color: var(--text); opacity: .9;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.session-row .sess-age { font-size: 8.5px; color: var(--text-dim); flex: none }
+.session-row .sess-ctx { color: var(--ctx); font-weight: 600; min-width: 34px; text-align: right; flex: none }
+.session-row .sess-ctx.sess-ctx-approx { font-style: italic; opacity: .75 }
+.session-row.active .sess-proj { opacity: 1; font-weight: 600 }
+.model-row { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px;
+  color: var(--text-dim); margin-bottom: 2px }
+.model-row span:last-child { color: var(--ok); font-variant-numeric: tabular-nums }
+
+/* ---------- Chế độ gọn (áp cho mọi bố cục) ---------- */
+body.compact #card { padding: 6px 9px 7px }
+body.compact #drag { margin-bottom: 5px }
+body.compact .row { margin-bottom: 5px }
+body.compact .row .label, body.compact .row .pct { font-size: 10px }
+body.compact .bar { height: 4px }
+body.compact .note { font-size: 8.5px }
+body.compact #foot { margin-top: 5px; font-size: 8.5px }
+body.compact .term { font-size: 10px; line-height: 1.55 }

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+*.dmg
+*.blockmap
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+auth.json
+credentials.json
+.credentials.json
