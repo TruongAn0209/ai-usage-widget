@@ -30,10 +30,10 @@ function safeDetect(p) {
   try { return p.detect() } catch { return false }
 }
 
-async function ask(list) {
+async function ask(list, strings) {
   return Promise.all(list.map(async (p) => {
     try {
-      const r = await p.fetchUsage()
+      const r = await p.fetchUsage(strings)
       return { id: p.id, name: p.name, local: !!p.local, ...r }
     } catch (e) {
       return { id: p.id, name: p.name, local: !!p.local, ok: false, error: e.message || 'FETCH_FAILED' }
@@ -51,9 +51,9 @@ const active = (disabled) => ALL.filter((p) => !disabled.includes(p.id) && safeD
 // bắt đầu TRƯỚC nhưng về SAU một lượt cục bộ 5-15 giây có thể ghi đè ngược mất số Antigravity vừa
 // mới cập nhật (codex soi ra 02/08). Tách hẳn 2 nguồn ở đây thì phía main.js không còn cách nào
 // lẫn lộn được nữa, dù có merge kiểu gì.
-const fetchAll = (disabled = []) => ask(active(disabled).filter((p) => !p.local))
+const fetchAll = (disabled = [], strings) => ask(active(disabled).filter((p) => !p.local), strings)
 
 // Chỉ nhóm cục bộ — dùng cho nhịp nhanh, không đụng tới Claude/Codex (tránh gọi API thừa).
-const fetchLocal = (disabled = []) => ask(active(disabled).filter((p) => p.local))
+const fetchLocal = (disabled = [], strings) => ask(active(disabled).filter((p) => p.local), strings)
 
 module.exports = { ALL, catalog, fetchAll, fetchLocal }

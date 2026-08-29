@@ -4,6 +4,8 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const https = require('https')
+const i18n = require('../i18n')
+const VI = i18n.getStrings('vi', 'vi-VN')
 
 const ID = 'openrouter'
 const NAME = 'OpenRouter'
@@ -57,7 +59,7 @@ function number(value) {
   return Number.isFinite(n) ? n : null
 }
 
-function parseKey(payload) {
+function parseKey(payload, strings = VI) {
   const data = payload && payload.data ? payload.data : {}
   const usage = number(data.usage)
   const limit = number(data.limit)
@@ -66,17 +68,17 @@ function parseKey(payload) {
     ? Math.max(0, Math.min(100, Math.round((usage / limit) * 1000) / 10))
     : null
   const info = usage != null
-    ? (limit != null ? `$${usage.toFixed(2)} / $${limit.toFixed(2)}` : `$${usage.toFixed(2)} đã dùng`)
+    ? (limit != null ? `$${usage.toFixed(2)} / $${limit.toFixed(2)}` : i18n.fmt(strings.usedDollar, { amount: `$${usage.toFixed(2)}` }))
     : null
   return {
     ok: true,
     plan: data.is_free_tier ? 'Free' : 'API',
-    metrics: pct == null ? [] : [{ key: 'monthly', label: 'Hạn mức API', pct, resetAt: null, info }],
-    info: remaining != null ? `còn $${remaining.toFixed(2)}` : info,
+    metrics: pct == null ? [] : [{ key: 'monthly', label: strings.metricApiLimit, pct, resetAt: null, info }],
+    info: remaining != null ? i18n.fmt(strings.remainingDollar, { amount: `$${remaining.toFixed(2)}` }) : info,
   }
 }
 
-function parseCredits(payload) {
+function parseCredits(payload, strings = VI) {
   const data = payload && payload.data ? payload.data : {}
   const total = number(data.total_credits)
   const used = number(data.total_usage)
@@ -85,18 +87,18 @@ function parseCredits(payload) {
   return {
     ok: true,
     plan: 'Credits',
-    metrics: [{ key: 'credits', label: 'Credits OpenRouter', pct: Math.max(0, Math.min(100, Math.round((used / total) * 1000) / 10)), resetAt: null,
-      info: `$${used.toFixed(2)} / $${total.toFixed(2)} · còn $${remaining.toFixed(2)}` }],
-    info: `còn $${remaining.toFixed(2)}`,
+    metrics: [{ key: 'credits', label: strings.metricCredits, pct: Math.max(0, Math.min(100, Math.round((used / total) * 1000) / 10)), resetAt: null,
+      info: `$${used.toFixed(2)} / $${total.toFixed(2)} · ${i18n.fmt(strings.remainingDollar, { amount: `$${remaining.toFixed(2)}` })}` }],
+    info: i18n.fmt(strings.remainingDollar, { amount: `$${remaining.toFixed(2)}` }),
   }
 }
 
-async function fetchUsage(request = https.request) {
+async function fetchUsage(strings = VI, request = https.request) {
   const token = readApiKey()
   if (!token) return { ok: false, error: 'NO_API_KEY' }
-  try { return parseCredits(await getJson(token, CREDITS_PATH, request)) }
+  try { return parseCredits(await getJson(token, CREDITS_PATH, request), strings) }
   catch (creditsError) {
-    try { return parseKey(await getJson(token, API_PATH, request)) }
+    try { return parseKey(await getJson(token, API_PATH, request), strings) }
     catch (keyError) { return { ok: false, error: keyError.message || creditsError.message || 'FETCH_FAILED' } }
   }
 }

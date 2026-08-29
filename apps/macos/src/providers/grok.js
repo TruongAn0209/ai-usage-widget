@@ -7,6 +7,8 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const https = require('https')
+const i18n = require('../i18n')
+const VI = i18n.getStrings('vi', 'vi-VN')
 
 const ID = 'grok'
 const NAME = 'Grok'
@@ -89,7 +91,7 @@ function findValue(value, names) {
   return null
 }
 
-function parseBilling(data, fallbackPlan = null) {
+function parseBilling(data, fallbackPlan = null, strings = VI) {
   const usage = findValue(data, ['creditUsagePercent', 'usagePercent'])
   const pct = percent(usage)
   const period = findValue(data, ['currentPeriod']) || {}
@@ -98,14 +100,14 @@ function parseBilling(data, fallbackPlan = null) {
   return {
     ok: true,
     plan,
-    metrics: pct == null ? [] : [{ key: 'weekly', label: 'Tuần', pct, resetAt }],
+    metrics: pct == null ? [] : [{ key: 'weekly', label: strings.metricWeekly, pct, resetAt }],
     unparsed: pct == null ? Object.keys(data || {}) : null,
   }
 }
 
 // Grok CLI đã tự lấy billing được nhưng endpoint web đôi khi chặn app ngoài bằng 403.
 // Khi đó đọc bản ghi billing gần nhất do chính CLI ghi, chỉ dùng trong 24 giờ và ghi rõ là số cũ.
-function readCachedBilling(file = LOG_FILE) {
+function readCachedBilling(file = LOG_FILE, strings = VI) {
   try {
     const stat = fs.statSync(file)
     if (Date.now() - stat.mtimeMs > 24 * 60 * 60 * 1000) return null
@@ -116,24 +118,24 @@ function readCachedBilling(file = LOG_FILE) {
       try { event = JSON.parse(row) } catch { continue }
       const config = event?.ctx?.config
       if (!config) continue
-      const result = parseBilling(config, config.subscriptionTier)
+      const result = parseBilling(config, config.subscriptionTier, strings)
       if (!result.metrics.length) continue
       const fetchedAt = new Date(event.ts).getTime()
       const stamp = Number.isFinite(fetchedAt) ? new Date(fetchedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : null
-      result.metrics = result.metrics.map((metric) => ({ ...metric, stale: true, info: stamp ? `số từ Grok CLI lúc ${stamp}` : 'số từ Grok CLI' }))
+      result.metrics = result.metrics.map((metric) => ({ ...metric, stale: true, info: stamp ? i18n.fmt(strings.grokCliStamp, { time: stamp }) : strings.grokCliStampNoTime }))
       return result
     }
   } catch { /* không có log hoặc log hỏng → giữ lỗi mạng thật */ }
   return null
 }
 
-async function fetchUsage(file = AUTH_FILE, request = https.request) {
+async function fetchUsage(strings = VI, file = AUTH_FILE, request = https.request) {
   const auth = readAuth(file)
   if (auth.error) return { ok: false, error: auth.error }
-  try { return parseBilling(await getJson(auth.token, request), auth.plan) }
+  try { return parseBilling(await getJson(auth.token, request), auth.plan, strings) }
   catch (error) {
     if (error.message === 'GROK_BILLING_BLOCKED') {
-      const cached = readCachedBilling()
+      const cached = readCachedBilling(LOG_FILE, strings)
       if (cached) return cached
     }
     return { ok: false, error: error.message || 'FETCH_FAILED' }

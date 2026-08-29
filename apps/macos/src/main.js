@@ -243,7 +243,7 @@ async function refreshApi() {
   const seq = ++apiSeq
   // `fetchAll` CHỈ hỏi AI từ xa (xem providers/index.js) — AI cục bộ (Antigravity) có nhịp riêng
   // bên dưới, không đi qua đây, nên vòng 180 giây này không còn cách nào đụng tới/đè số của nó.
-  const result = await providers.fetchAll(config.disabledProviders)
+  const result = await providers.fetchAll(config.disabledProviders, s())
   if (seq !== apiSeq) return { source: 'remote', providers: providerResults(result), skipped: true }
   reconcileProviders(result, remoteProviderIds)
   // Nhật ký chẩn đoán — CHỈ trạng thái và số mục, TUYỆT ĐỐI không in token/credential.
@@ -264,7 +264,7 @@ async function refreshApi() {
 let localProvidersSeq = 0
 async function refreshLocalProviders() {
   const seq = ++localProvidersSeq
-  const list = await providers.fetchLocal(config.disabledProviders)
+  const list = await providers.fetchLocal(config.disabledProviders, s())
   if (seq !== localProvidersSeq) return { source: 'local-provider', providers: providerResults(list), skipped: true }
   reconcileProviders(list, localProviderIds)
   checkAlerts(list)
@@ -665,13 +665,16 @@ function trySwapHotkey(newHotkey, oldHotkey) {
   return swapHotkey(globalShortcut, toggleWindow, newHotkey, oldHotkey)
 }
 
-// ★ Chỉ tự khởi động app khi file này ĐÚNG LÀ tiến trình chính (`electron .` nạp qua "main" trong
-//   package.json — Node đặt `require.main === module` cho đúng kịch bản đó). test/*.js có thể
-//   `require('../src/main.js')` để lấy các hàm THUẦN bên dưới (buildEntry, trySwapHotkey…) phục vụ
-//   test hồi quy mà KHÔNG mở cửa sổ thật/không tạo Tray/không gọi mạng — bản cũ không có ranh giới
-//   này nên logic dàn xếp (mục 1, 4, 5, 9 — codex soi ra 02/08) chỉ kiểm được bằng tay, không test
-//   tự động được.
-if (require.main === module) {
+// ★ Chỉ tự khởi động app khi file này ĐÚNG LÀ tiến trình chính, không phải bị `require()` từ nơi
+//   khác (test/*.js có thể `require('../src/main.js')` để lấy các hàm THUẦN bên dưới — buildEntry,
+//   trySwapHotkey… — phục vụ test hồi quy mà KHÔNG mở cửa sổ thật/không tạo Tray/không gọi mạng).
+//   ⚠️ 29/08: `require.main === module` KHÔNG dùng được trong Electron — Electron tự nạp file
+//   "main" của package.json qua bootstrap riêng, `require.main` trỏ vào module nội bộ của Electron
+//   (filename = "electron") chứ không phải main.js, nên điều kiện này luôn SAI và app KHÔNG BAO GIỜ
+//   khởi động thật (dò ra 29/08: cửa sổ/tray/timer chưa từng chạy, chỉ có icon Dock đứng im). Dùng
+//   `!module.parent` thay thế — true khi file này được nạp trực tiếp (không ai `require()` nó),
+//   false khi một file khác `require('./main.js')` gọi vào (đúng ý muốn ban đầu của guard này).
+if (!module.parent) {
   app.whenReady().then(() => {
     loadConfig()
     if (app.dock) app.dock.hide()   // widget ở khay, không chiếm chỗ Dock

@@ -18,6 +18,8 @@ const os = require('os')
 const path = require('path')
 const https = require('https')
 const http = require('http')
+const i18n = require('../i18n')
+const VI = i18n.getStrings('vi', 'vi-VN')
 
 const ID = 'antigravity'
 const NAME = 'Antigravity'
@@ -148,15 +150,15 @@ function markStale(snap) {
 
 // Gộp các model DÙNG CHUNG một hạn mức thành 1 mục, giống cách chính CLI `agy` gộp
 // "GEMINI MODELS" / "CLAUDE AND GPT-OSS MODELS" — 11 model mà hiện 11 dòng thì không đọc nổi.
-function familyOf(label) {
+function familyOf(label, strings = VI) {
   const s = String(label || '')
   if (/gemini/i.test(s)) return 'Gemini'
   if (/gpt/i.test(s)) return 'GPT-OSS'
   if (/claude/i.test(s)) return 'Claude'
-  return s.split(' ')[0] || 'Khác'
+  return s.split(' ')[0] || strings.metricOther
 }
 
-function toMetrics(json) {
+function toMetrics(json, strings = VI) {
   const us = (json && json.userStatus) || {}
   const configs = (us.cascadeModelConfigData || {}).clientModelConfigs || []
   const groups = new Map()
@@ -165,7 +167,7 @@ function toMetrics(json) {
     if (q.remainingFraction == null) continue
     const key = `${q.remainingFraction}|${q.resetTime || ''}`
     if (!groups.has(key)) groups.set(key, { frac: Number(q.remainingFraction), reset: q.resetTime, families: new Set() })
-    groups.get(key).families.add(familyOf(m.label))
+    groups.get(key).families.add(familyOf(m.label, strings))
   }
   const metrics = []
   for (const [key, g] of groups) {
@@ -174,7 +176,7 @@ function toMetrics(json) {
       key,
       // Đổi sang "% ĐÃ DÙNG" theo quy ước chung. Giao diện chính chủ Antigravity hiện
       //   phần CÒN LẠI (97%) — cùng một sự thật, ngược chiều. Đừng "sửa" lại cho giống nó.
-      label: [...g.families].join(' & ') + ' · 5 giờ',
+      label: [...g.families].join(' & ') + strings.metricFiveHourSuffix,
       pct: Math.max(0, Math.min(100, (1 - g.frac) * 100)),
       resetAt: Number.isFinite(t) ? t : null,
       scoped: true,
@@ -192,7 +194,7 @@ function detect() {
   return cache.running || !!freshSnapshot()
 }
 
-async function fetchUsage() {
+async function fetchUsage(strings = VI) {
   if (process.platform !== 'darwin') return { ok: false, error: 'UNSUPPORTED_OS' }
   if (!fresh() || !cache.running) await refresh()
 
@@ -209,7 +211,7 @@ async function fetchUsage() {
 
   const us = json.userStatus || {}
   const plan = ((us.planStatus || {}).planInfo || {}).planName || null
-  const metrics = toMetrics(json)
+  const metrics = toMetrics(json, strings)
   if (metrics.length) saveSnapshot(metrics, plan)
   return { ok: true, plan, metrics }
 }

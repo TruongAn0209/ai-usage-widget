@@ -14,6 +14,8 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const { readClaudeAuth } = require('./credentials')
+const i18n = require('../i18n')
+const VI = i18n.getStrings('vi', 'vi-VN')
 
 let cachedUA = null
 const DESKTOP_USAGE_FILE = path.join(os.homedir(), 'Library', 'Application Support', 'Claude', 'plan-usage-history.json')
@@ -51,7 +53,7 @@ function pickReset(obj) {
   return null
 }
 
-function desktopMetric(key, label, value, sampledAt) {
+function desktopMetric(key, label, value, sampledAt, strings) {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
   const d = new Date(sampledAt)
@@ -60,13 +62,13 @@ function desktopMetric(key, label, value, sampledAt) {
     key, label,
     pct: Math.max(0, Math.min(100, n)),
     resetAt: null,
-    info: `Claude IDE · cập nhật ${hhmm}`,
+    info: i18n.fmt(strings.metricIdeUpdated, { time: hhmm }),
   }
 }
 
 // Claude Desktop/IDE có cache hạn mức riêng, không dùng access token Claude Code trong Keychain.
 // Đọc cache này làm đường dự phòng khi người dùng chỉ đăng nhập IDE hoặc OAuth CLI đã hết hạn.
-async function readDesktopUsage(file = DESKTOP_USAGE_FILE, now = Date.now()) {
+async function readDesktopUsage(file = DESKTOP_USAGE_FILE, now = Date.now(), strings = VI) {
   try {
     const raw = JSON.parse(await fs.promises.readFile(file, 'utf8'))
     const samples = Array.isArray(raw.samples) ? raw.samples : []
@@ -77,8 +79,8 @@ async function readDesktopUsage(file = DESKTOP_USAGE_FILE, now = Date.now()) {
     const age = now - sampledAt
     if (age < -5 * 60 * 1000 || age > DESKTOP_USAGE_MAX_AGE_MS) return null
     const metrics = [
-      desktopMetric('5h', '5 giờ', sample.u.fh, sampledAt),
-      desktopMetric('7d', 'Tuần', sample.u.sd, sampledAt),
+      desktopMetric('5h', strings.metricFiveHour, sample.u.fh, sampledAt, strings),
+      desktopMetric('7d', strings.metricWeekly, sample.u.sd, sampledAt, strings),
     ].filter(Boolean)
     if (!metrics.length) return null
     return { ok: true, plan: 'IDE', source: 'desktop-history', sampledAt, metrics }
@@ -103,10 +105,10 @@ function getJson(url, headers) {
   })
 }
 
-async function fetchUsage() {
+async function fetchUsage(strings = VI) {
   const auth = await readClaudeAuth()
   if (auth.error) {
-    return await readDesktopUsage() || { ok: false, error: auth.error }
+    return await readDesktopUsage(DESKTOP_USAGE_FILE, Date.now(), strings) || { ok: false, error: auth.error }
   }
 
   const ua = await claudeCodeUA()
@@ -118,14 +120,14 @@ async function fetchUsage() {
       Accept: 'application/json',
     })
   } catch (e) {
-    return await readDesktopUsage() || { ok: false, error: e.message || 'FETCH_FAILED' }
+    return await readDesktopUsage(DESKTOP_USAGE_FILE, Date.now(), strings) || { ok: false, error: e.message || 'FETCH_FAILED' }
   }
 
   const metrics = []
   const five = data.five_hour || data.fiveHour
-  if (five) metrics.push({ key: '5h', label: '5 giờ', pct: pickPct(five), resetAt: pickReset(five) })
+  if (five) metrics.push({ key: '5h', label: strings.metricFiveHour, pct: pickPct(five), resetAt: pickReset(five) })
   const week = data.seven_day || data.sevenDay
-  if (week) metrics.push({ key: '7d', label: 'Tuần', pct: pickPct(week), resetAt: pickReset(week) })
+  if (week) metrics.push({ key: '7d', label: strings.metricWeekly, pct: pickPct(week), resetAt: pickReset(week) })
 
   // ★ Bucket riêng theo model (Fable/Opus) nằm trong mảng limits[], KHÔNG phải field
   //   `seven_day_opus` (field đó luôn null — đừng dùng).
@@ -135,7 +137,7 @@ async function fetchUsage() {
     if (!name) continue
     metrics.push({
       key: 'm:' + name,
-      label: name + (String(l.kind || '').includes('weekly') ? ' · tuần' : ''),
+      label: name + (String(l.kind || '').includes('weekly') ? strings.metricWeeklySuffix : ''),
       pct: pickPct(l),
       resetAt: pickReset(l),
       scoped: true,

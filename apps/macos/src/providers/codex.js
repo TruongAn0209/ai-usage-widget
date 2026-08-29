@@ -13,6 +13,8 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const https = require('https')
+const i18n = require('../i18n')
+const VI = i18n.getStrings('vi', 'vi-VN')
 
 const ID = 'codex'
 // Backend WHAM là hạn mức gói ChatGPT, không chỉ riêng lệnh Codex.
@@ -43,14 +45,14 @@ function toMs(v) {
 }
 
 // Nhãn suy từ độ dài cửa sổ THẬT (sai số 10% để chịu được số làm tròn của OpenAI).
-function windowLabel(sec) {
-  if (!sec || sec <= 0) return 'Hạn mức'
+function windowLabel(sec, strings = VI) {
+  if (!sec || sec <= 0) return strings.metricGeneric
   const near = (t) => Math.abs(sec - t) <= t * 0.1
-  if (near(18000)) return '5 giờ'
-  if (near(604800)) return 'Tuần'
+  if (near(18000)) return strings.metricFiveHour
+  if (near(604800)) return strings.metricWeekly
   const days = Math.round(sec / 86400)
-  if (days >= 1) return days + ' ngày'
-  return Math.round(sec / 3600) + ' giờ'
+  if (days >= 1) return i18n.fmt(strings.metricDays, { n: days })
+  return i18n.fmt(strings.metricHours, { n: Math.round(sec / 3600) })
 }
 
 function getJson(url, headers) {
@@ -71,7 +73,7 @@ function getJson(url, headers) {
   })
 }
 
-async function fetchUsage(dir) {
+async function fetchUsage(strings = VI, dir) {
   let tokens
   try { tokens = (JSON.parse(fs.readFileSync(credPath(dir), 'utf8')).tokens) || {} }
   catch { return { ok: false, error: 'NO_CREDENTIALS' } }
@@ -90,7 +92,7 @@ async function fetchUsage(dir) {
     if (!w || w.used_percent == null) continue
     metrics.push({
       key: slot,
-      label: windowLabel(w.limit_window_seconds),
+      label: windowLabel(w.limit_window_seconds, strings),
       pct: pct(w.used_percent),
       resetAt: toMs(w.reset_at),
     })
