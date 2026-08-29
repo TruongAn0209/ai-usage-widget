@@ -35,7 +35,7 @@ function visit(dir) {
     const rel = path.relative(root, full)
     if (forbiddenNames.some((pattern) => pattern.test(entry.name))) fail(`file không được public: ${rel}`)
     if (entry.isDirectory()) { visit(full); continue }
-    if (!entry.isFile() || rel === 'scripts/public-check.js') continue
+    if (!entry.isFile() || rel === path.join('scripts', 'public-check.js')) continue
     const buf = fs.readFileSync(full)
     if (buf.includes(0)) continue
     const text = buf.toString('utf8')
