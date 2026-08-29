@@ -6,27 +6,26 @@
 // ★ CSP ở đây là `style-src 'self'` (không có unsafe-inline) ⇒ KHÔNG được dựng HTML bằng chuỗi
 //   có thuộc tính style="". Đặt kích thước/màu qua CSSOM (el.style.x) hoặc qua lớp CSS.
 const $ = (id) => document.getElementById(id)
-const nf = new Intl.NumberFormat('vi-VN')
 const SVG_NS = 'http://www.w3.org/2000/svg'
+
+// ★ Cửa sổ này chạy `sandbox: true, nodeIntegration: false` (mục 15, xem preload-widget.js) →
+//   KHÔNG được `require()` gì ở đây, kể cả module thuần như i18n.js. Main.js đã tự dịch sẵn và gửi
+//   nguyên dict `strings` + `lang` mỗi lần push dữ liệu (xem render()); renderer chỉ ĐỌC `S`.
+let S = null   // gán ở render() từ data.strings — null tới lượt push đầu tiên (không phải vấn đề,
+               // render() luôn được gọi trước khi có tương tác người dùng nào cần tới S)
+let nf = new Intl.NumberFormat('vi-VN')
 
 // Câu chữ ở đây phải TRUNG TÍNH tên hãng — chỗ hiện lỗi luôn có sẵn tiền tố "TênAI: ", ghi cứng
 // chữ "Claude" là ra câu vô lý kiểu "Codex: chưa tìm thấy đăng nhập Claude".
-const ERRORS = {
-  NO_CREDENTIALS: 'Chưa tìm thấy đăng nhập trên máy này.',
-  NO_TOKEN: 'Đăng nhập thiếu token.',
-  EXPIRED: 'Token đã hết hạn — mở lại CLI để đăng nhập.',
-  UNAUTHORIZED: 'Token bị từ chối — mở lại CLI để đăng nhập.',
-  RATE_LIMITED: 'Bị giới hạn tần suất, sẽ thử lại.',
-  TIMEOUT: 'Mạng chậm/không nối được.',
-  NETWORK: 'Không nối được mạng.',
-  NO_QUOTA_API: 'Hãng không công bố API hạn mức.',
-  NO_API_KEY: 'Chưa có OPENROUTER_API_KEY trên máy này.',
-  LOADING: 'Đang đọc…',
-  NOT_RUNNING: 'agy đang tắt.',
-  UNSUPPORTED_OS: 'Chỉ hỗ trợ macOS.',
-  GROK_BILLING_BLOCKED: 'Grok chặn truy cập billing — mở Grok CLI để kiểm tra.',
+const ERROR_KEYS = {
+  NO_CREDENTIALS: 'errNoCredentials', NO_TOKEN: 'errNoToken', EXPIRED: 'errExpired',
+  UNAUTHORIZED: 'errUnauthorized', RATE_LIMITED: 'errRateLimited', TIMEOUT: 'errTimeout',
+  NETWORK: 'errNetwork', NO_QUOTA_API: 'errNoQuotaApi', NO_API_KEY: 'errNoApiKey',
+  LOADING: 'loading', NOT_RUNNING: 'errNotRunning', UNSUPPORTED_OS: 'errUnsupportedOs',
+  GROK_BILLING_BLOCKED: 'errGrokBillingBlocked',
 }
-const errText = (code) => ERRORS[code] || ('Lỗi: ' + (code || 'không rõ'))
+const errText = (code) => (ERROR_KEYS[code] ? S[ERROR_KEYS[code]] : S.errOther + ': ' + (code || '?'))
+const fmt = (str, vars) => String(str).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`))
 
 function levelClass(pct) {
   if (pct == null) return ''
@@ -49,12 +48,12 @@ function toneOf(m) {
 function resetText(resetAt) {
   if (!resetAt) return ''
   const ms = resetAt - Date.now()
-  if (ms <= 0) return 'đang làm mới'
+  if (ms <= 0) return S.resetting
   // Làm tròn ra TỔNG SỐ PHÚT rồi mới tách giờ/phút. Tách trước rồi mới làm tròn thì phút có thể
   // thành 60 → hiện "còn 1h60" thay vì "còn 2h00" (test khói bắt được 27/07).
   const totalMin = Math.round(ms / 60000)
   const h = Math.floor(totalMin / 60), m = totalMin % 60
-  return h > 0 ? `còn ${h}h${String(m).padStart(2, '0')}` : `còn ${m} phút`
+  return h > 0 ? fmt(S.resetInHours, { h, m: String(m).padStart(2, '0') }) : fmt(S.resetInMinutes, { m })
 }
 
 // ★ "Đã cập nhật" phải theo giờ LẤY ĐƯỢC DỮ LIỆU thật (main.js gắn `fetchedAt` mỗi khi fetch
@@ -71,9 +70,9 @@ function latestFetchedAt(providers) {
 function relTime(ms) {
   if (!ms) return '—'
   const diffMin = Math.round((Date.now() - ms) / 60000)
-  if (diffMin <= 0) return 'vừa xong'
-  if (diffMin < 60) return `${diffMin} phút trước`
-  return `${Math.floor(diffMin / 60)} giờ trước`
+  if (diffMin <= 0) return S.justNow
+  if (diffMin < 60) return fmt(S.minutesAgo, { n: diffMin })
+  return fmt(S.hoursAgo, { n: Math.floor(diffMin / 60) })
 }
 
 function fmtTokens(n) {
@@ -87,12 +86,12 @@ function fmtTokens(n) {
 // Trần 200k khi phiên mới dùng ít token CHỈ LÀ PHỎNG ĐOÁN (1M dùng 80k trông y hệt 200k dùng 80k)
 // → phải có dấu ≈ và chữ "ước tính", nếu không người dùng có thể tin nhầm con số sai gấp 5.
 function contextNote(ctx) {
-  const used = `đã dùng ${nf.format(ctx.tokens)}`
-  if (ctx.limitSource === 'guess') return `${used} / ≈${nf.format(ctx.limit)} (ước tính — đặt trần trong Cài đặt)`
+  const used = `${S.usedPrefix} ${nf.format(ctx.tokens)}`
+  if (ctx.limitSource === 'guess') return `${used} / ≈${nf.format(ctx.limit)} ${S.estimateSuffix}`
   if (ctx.limitSource === 'manual') {
     return ctx.overLimit
-      ? `${used} / ${nf.format(ctx.limit)} ⚠ đã vượt trần đặt tay — sửa trong Cài đặt`
-      : `${used} / ${nf.format(ctx.limit)} (đặt tay)`
+      ? `${used} / ${nf.format(ctx.limit)} ${S.manualOverLimit}`
+      : `${used} / ${nf.format(ctx.limit)} ${S.manualSuffix}`
   }
   return `${used} / ${nf.format(ctx.limit)}`   // model tự khai, hoặc suy từ bằng chứng token → chắc
 }
@@ -103,7 +102,7 @@ function forecastNote(fc, key) {
   const f = fc && fc[key]
   if (!f || !f.etaMs) return ''
   const d = new Date(f.etaMs)
-  return ` · hết ~${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return fmt(S.forecastEta, { time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` })
 }
 
 // ---- Gom mọi hạn mức thành MỘT danh sách chung cho cả 5 bố cục -----------------------
@@ -161,7 +160,7 @@ function collect(data) {
   const ctx = data.context
   if (data.config.showContext && ctx && ctx.available && ctx.pct != null) {
     list.push({
-      key: 'ctx', group: multi ? 'Phiên này' : null, label: 'Ngữ cảnh phiên',
+      key: 'ctx', group: multi ? S.groupThisSession : null, label: S.sessionContext,
       pct: ctx.pct, kind: 'ctx', note: contextNote(ctx), sepBefore: !multi,
     })
   }
@@ -329,18 +328,18 @@ function todaySection(data) {
   // ★ `partial` = mỗi transcript chỉ đọc 4MB cuối và chỉ 20 file mới nhất được cộng — ngày làm
   //   việc dài có thể báo THẤP HƠN thật mà không nói gì (codex soi ra 02/08). Ghi rõ "≥"/"chưa đầy
   //   đủ" thay vì trình bày như một tổng chắc chắn.
-  frag.append(sectionTitle(t.partial ? 'Hôm nay (chưa đầy đủ)' : 'Hôm nay'))
+  frag.append(sectionTitle(t.partial ? S.todayPartial : S.todaySection))
   const ge = t.partial ? '≥ ' : ''
   // Ghi rõ nguồn: CLI có cache_read, còn Claude Desktop có bộ đếm ngày riêng. Để trần chữ
   // “Token” thì dễ tưởng đây là đúng một loại số hay chỉ một nơi làm việc.
-  const desktopNote = t.desktopTokens > 0 ? ' + IDE' : ''
-  frag.append(statLine('Token (CLI gồm cache' + desktopNote + ')', ge + fmtTokens(t.tokens || 0)))
-  frag.append(statLine('Lượt hỏi', ge + String(t.messages || 0)))
+  const tokensLabel = t.desktopTokens > 0 ? S.statTokensWithIde : S.statTokens
+  frag.append(statLine(tokensLabel, ge + fmtTokens(t.tokens || 0)))
+  frag.append(statLine(S.statPrompts, ge + String(t.messages || 0)))
   const sessionsCounted = t.sessionsCounted
   const sessLabel = Number.isFinite(sessionsCounted) && sessionsCounted < (t.sessionsToday || 0)
-    ? `${t.sessionsToday || 0} / ${t.totalSessions || 0} (đã cộng ${sessionsCounted})`
+    ? `${t.sessionsToday || 0} / ${t.totalSessions || 0}` + fmt(S.countedSuffix, { n: sessionsCounted })
     : `${t.sessionsToday || 0} / ${t.totalSessions || 0}`
-  frag.append(statLine('Phiên', sessLabel))
+  frag.append(statLine(S.statSessions, sessLabel))
   for (const m of (t.models || []).slice(0, 4)) {
     const row = document.createElement('div'); row.className = 'model-row'
     const a = document.createElement('span'); a.textContent = String(m.model || '?').replace('claude-', '')
@@ -354,24 +353,26 @@ function buildPanel(data) {
   const frag = document.createDocumentFragment()
   const sessions = (data.today && data.today.sessions) || []
   if (sessions.length) {
-    frag.append(sectionTitle('Phiên gần đây'))
-    for (const [i, s] of sessions.entries()) {
+    frag.append(sectionTitle(S.recentSessions))
+    for (const [i, sess] of sessions.entries()) {
       const row = document.createElement('div'); row.className = 'session-row' + (i === 0 ? ' active' : '')
-      const p = document.createElement('span'); p.className = 'sess-proj'; p.textContent = s.project; p.title = s.project
+      const p = document.createElement('span'); p.className = 'sess-proj'; p.textContent = sess.project; p.title = sess.project
       const a = document.createElement('span'); a.className = 'sess-age'
-      a.textContent = s.ageMinutes <= 0 ? 'vừa xong' : s.ageMinutes < 60 ? s.ageMinutes + 'p' : Math.round(s.ageMinutes / 60) + 'h'
+      a.textContent = sess.ageMinutes <= 0 ? S.justNow
+        : sess.ageMinutes < 60 ? fmt(S.ageMinShort, { n: sess.ageMinutes })
+        : fmt(S.ageHourShort, { n: Math.round(sess.ageMinutes / 60) })
       const c = document.createElement('span'); c.className = 'sess-ctx'
       // Trần 200k khi phiên mới dùng ít token chỉ là PHỎNG ĐOÁN (xem contextNote ở trên) — panel
       // này KHÔNG được đi qua contextNote nên phải tự đánh dấu ≈ + tooltip, không thì hiện số chắc
       // chắn giả (đúng bẫy đã vấp 27/07: trần đoán mò thổi % lên gấp 5).
-      if (s.pct == null) {
+      if (sess.pct == null) {
         c.textContent = '—'
       } else {
-        const approx = s.limitSource === 'guess'
-        c.textContent = (approx ? '≈' : '') + Math.round(s.pct) + '%'
+        const approx = sess.limitSource === 'guess'
+        c.textContent = (approx ? '≈' : '') + Math.round(sess.pct) + '%'
         c.classList.toggle('sess-ctx-approx', approx)
-        if (approx) c.title = 'Trần ngữ cảnh là ước tính (chưa xác nhận) — đặt tay trong Cài đặt để chắc'
-        else if (s.overLimit) c.title = '⚠ đã vượt trần đặt tay trong Cài đặt'
+        if (approx) c.title = S.contextApproxTooltip
+        else if (sess.overLimit) c.title = S.manualOverLimit
       }
       row.append(p, a, c); frag.append(row)
     }
@@ -386,6 +387,12 @@ let expanded = false
 
 function render(data) {
   latest = data
+  S = data.strings || S
+  nf = new Intl.NumberFormat(data.lang === 'en' ? 'en-US' : 'vi-VN')
+  document.title = S.appTitle
+  const btnRefresh = $('btn-refresh'); btnRefresh.title = S.btnRefresh; btnRefresh.setAttribute('aria-label', S.btnRefresh)
+  const btnSettings = $('btn-settings'); btnSettings.title = S.btnSettings; btnSettings.setAttribute('aria-label', S.btnSettings)
+  $('expand').title = S.expandHint
   const cfg = data.config || {}
   document.body.dataset.palette = cfg.palette || 'espresso'
   const layout = LAYOUTS[cfg.layout] ? cfg.layout : 'bars'
@@ -402,7 +409,7 @@ function render(data) {
   // ★ Tiêu đề PHẢI trung tính khi có ≥2 AI — app đã hỗ trợ Claude/Codex/Antigravity, ghi cứng
   //   "Claude" làm sản phẩm trông như Claude-only dù đang hiện AI khác (codex soi ra 02/08).
   //   1 AI thì vẫn nêu đúng tên AI đó cho gọn (khớp cách `plan` hiện gói của đúng AI ấy).
-  $('titleText').textContent = providers.length > 1 ? 'AI Usage' : (providers[0] ? providers[0].name : 'AI Usage')
+  $('titleText').textContent = providers.length > 1 ? S.appTitle : (providers[0] ? providers[0].name : S.appTitle)
 
   // Dòng trạng thái. Một AI → nhét gọn vào thanh tiêu đề. Nhiều AI → xuống dòng riêng bên dưới,
   // vì thanh tiêu đề chỉ đủ chỗ cho một cái tên (hai cái là bị cắt thành "CLAUDE · MAX COD…").
@@ -417,7 +424,7 @@ function render(data) {
       : '⚠ ' + p.name)).join('   ')
     status.style.display = ''
   } else {
-    plan.textContent = okList.length ? (okList[0].plan || '') + (okList[0].stale ? ' ⚠ mất mạng' : '') : ''
+    plan.textContent = okList.length ? (okList[0].plan || '') + (okList[0].stale ? S.staleNetwork : '') : ''
     status.textContent = ''
     status.style.display = 'none'
   }
@@ -432,7 +439,7 @@ function render(data) {
     const msg = document.createElement('div'); msg.className = 'msg'
     msg.textContent = badList.length
       ? `${badList[0].name}: ${errText(badList[0].error)}`
-      : 'Chưa đọc được hạn mức nào.'
+      : S.noMetrics
     body.append(msg)
   } else {
     body.append(LAYOUTS[layout](items, data))
@@ -454,8 +461,8 @@ function render(data) {
 
   const fa = latestFetchedAt(providers)
   $('updated').textContent = relTime(fa)
-  $('updated').title = fa ? new Date(fa).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''
-  $('sessions').textContent = data.today ? `${data.today.sessionsToday} phiên hôm nay` : ''
+  $('updated').title = fa ? new Date(fa).toLocaleTimeString(data.lang === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''
+  $('sessions').textContent = data.today ? fmt(S.sessionsFooter, { n: data.today.sessionsToday }) : ''
 
   // Tự đo chiều cao rồi báo về main để cửa sổ khít nội dung (không thừa, không cắt).
   requestAnimationFrame(() => {
@@ -489,7 +496,7 @@ $('btn-refresh').addEventListener('click', async (e) => {
   } catch { status = 'failure' }
   b.classList.remove('spin')
   b.classList.add(status === 'success' ? 'flash-ok' : status === 'partial' ? 'flash-partial' : 'flash-err')
-  b.title = status === 'success' ? 'Làm mới thành công' : status === 'partial' ? 'Làm mới một phần' : 'Làm mới thất bại'
+  b.title = status === 'success' ? S.refreshOk : status === 'partial' ? S.refreshPartial : S.refreshFail
   setTimeout(() => { b.classList.remove('flash-ok', 'flash-partial', 'flash-err'); b.disabled = false }, 700)
 })
 $('expand').addEventListener('click', () => {

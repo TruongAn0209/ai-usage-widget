@@ -22,7 +22,7 @@
     "dist:win": "electron-builder --win nsis --x64",
     "check:public": "node ../../scripts/public-check.js",
     "test:syntax": "node scripts/check-syntax.js",
-    "test:unit": "node test/windows-cli-watcher.js && node test/follow-claude-cli-decision.js && node test/claude-desktop.js",
+    "test:unit": "node test/windows-cli-watcher.js && node test/follow-claude-cli-decision.js && node test/claude-desktop.js && node test/config-schema.js && node test/i18n.js && node test/gemini.js && node test/codex.js && node test/grok.js && node test/openrouter.js && node test/alerts.js",
     "test": "npm run check:public && npm run test:syntax && npm run test:unit"
   },
   "build": {

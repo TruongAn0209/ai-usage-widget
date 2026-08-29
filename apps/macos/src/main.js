@@ -8,6 +8,7 @@ const providers = require('./providers')
 const forecast = require('./forecast')
 const tracker = require('./usageTracker')
 const { sanitizeConfig } = require('./configSchema')
+const i18n = require('./i18n')
 const providerState = require('./providerState')
 const { trySwapHotkey: swapHotkey } = require('./hotkey')
 const { providerResults, aggregateRefreshResults } = require('./refreshResult')
@@ -19,6 +20,7 @@ const { createTerminalWidgetSync } = require('./terminalWidgetSync')
 const CONFIG_DIR = path.join(app.getPath('appData'), 'ai-usage-widget-mac')
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json')
 const DEFAULTS = {
+  lang: 'auto',          // 'auto' | 'vi' | 'en' — auto suy theo app.getLocale()
   corner: 'top-right',
   customPosition: null,
   palette: 'espresso',
@@ -51,6 +53,9 @@ const DEFAULTS = {
   contextLimit: 'auto',
 }
 let config = { ...DEFAULTS }
+// Dict hiện hành theo config.lang + locale hệ thống — gọi lại mỗi lần cần (đổi ngôn ngữ trong Cài
+// đặt phải có hiệu lực ngay, không cache dict cũ).
+function s() { return i18n.getStrings(config.lang, app.getLocale()) }
 
 // ★ Đi qua `sanitizeConfig` dù là đọc từ đĩa — file config.json có thể bị tay ai đó sửa lỗi tay,
 //   hoặc còn sót khoá/kiểu của bản cũ hơn (codex soi ra 02/08: `disabledProviders: null`,
@@ -187,9 +192,10 @@ function checkAlerts(list) {
       if (m.pct >= config.alertCritPct) level = 2
       else if (m.pct >= config.alertWarnPct) level = 1
       if (level > st.level) {
+        const strings = s()
         new Notification({
-          title: level === 2 ? `⛔ Sắp hết hạn mức ${p.name}` : `⚠️ Hạn mức ${p.name} đã cao`,
-          body: `${multi ? p.name + ' · ' : ''}${m.label}: đã dùng ${m.pct.toFixed(0)}%`,
+          title: i18n.fmt(level === 2 ? strings.alertCritTitle : strings.alertWarnTitle, { name: p.name }),
+          body: `${multi ? p.name + ' · ' : ''}${m.label}: ${strings.usedPrefix} ${m.pct.toFixed(0)}%`,
           silent: level === 1,
         }).show()
         st.level = level
@@ -372,6 +378,8 @@ async function pushAll() {
       context: lastLocal,
       today: lastToday,
       forecasts: lastForecasts,
+      strings: s(),
+      lang: i18n.resolveLang(config.lang, app.getLocale()),
       config: {
         palette: config.palette, layout: config.layout, compact: config.compact,
         opacity: config.opacity, hoverBoost: config.hoverBoost,
@@ -401,26 +409,34 @@ function trayIcon() {
   return img
 }
 
-const OPACITY_PRESETS = [['25% — rất trong', 0.25], ['40%', 0.4], ['60%', 0.6], ['80%', 0.8], ['100% — đặc', 1]]
-const LAYOUTS = [['Thanh ngang', 'bars'], ['Vòng tròn', 'rings'], ['Dải siêu gọn', 'strip'],
-  ['Bảng lớn', 'dashboard'], ['Terminal', 'terminal']]
-
 function buildTray() {
+  const strings = s()
+  const OPACITY_PRESETS = [
+    [strings.opacity25, 0.25], [strings.opacity40, 0.4], [strings.opacity60, 0.6],
+    [strings.opacity80, 0.8], [strings.opacity100, 1],
+  ]
+  const LAYOUTS = [
+    [strings.layoutBars, 'bars'], [strings.layoutRings, 'rings'], [strings.layoutStrip, 'strip'],
+    [strings.layoutDashboard, 'dashboard'], [strings.layoutTerminal, 'terminal'],
+  ]
   // Chỉ tạo Tray MỘT LẦN. Trước đây hàm này gọi `new Tray(...)` mỗi lần dựng lại menu → bấm
   // ẩn/hiện vài lần là mọc thêm mấy icon rác trên thanh trạng thái.
-  if (!tray) { tray = new Tray(trayIcon()); tray.setToolTip('AI Usage') }
-  const corners = [['Trên trái', 'top-left'], ['Trên phải', 'top-right'], ['Dưới trái', 'bottom-left'], ['Dưới phải', 'bottom-right']]
+  if (!tray) { tray = new Tray(trayIcon()); tray.setToolTip(strings.appTitle) }
+  const corners = [
+    [strings.cornerTopLeft, 'top-left'], [strings.cornerTopRight, 'top-right'],
+    [strings.cornerBottomLeft, 'bottom-left'], [strings.cornerBottomRight, 'bottom-right'],
+  ]
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: win && win.isVisible() ? 'Ẩn widget' : 'Hiện widget', click: toggleWindow },
+    { label: win && win.isVisible() ? strings.trayHide : strings.trayShow, click: toggleWindow },
     { type: 'separator' },
     {
-      label: 'Vị trí', submenu: corners.map(([label, key]) => ({
+      label: strings.trayPosition, submenu: corners.map(([label, key]) => ({
         label, type: 'radio', checked: config.corner === key && !config.customPosition,
         click: () => { config.corner = key; config.customPosition = null; saveConfig(); applyWindowGeometry() },
       })),
     },
     {
-      label: 'Bố cục', submenu: LAYOUTS.map(([label, key]) => ({
+      label: strings.trayLayout, submenu: LAYOUTS.map(([label, key]) => ({
         label, type: 'radio', checked: (config.layout || 'bars') === key,
         // Đổi bố cục là đổi cả bề ngang cần dùng → phải reset chiều cao đo được, không thì
         // cửa sổ giữ chiều cao của bố cục cũ cho tới lần đo kế tiếp (nhìn như bị cắt).
@@ -428,34 +444,34 @@ function buildTray() {
       })),
     },
     {
-      label: 'Độ trong', submenu: OPACITY_PRESETS.map(([label, v]) => ({
+      label: strings.trayOpacity, submenu: OPACITY_PRESETS.map(([label, v]) => ({
         label, type: 'radio', checked: Math.abs((config.opacity ?? 0.95) - v) < 0.03,
         click: () => { config.opacity = v; saveConfig(); pushAll(); buildTray() },
       })),
     },
     {
-      label: 'Rõ lên khi rê chuột', type: 'checkbox', checked: config.hoverBoost !== false,
+      label: strings.trayHoverBoost, type: 'checkbox', checked: config.hoverBoost !== false,
       click: () => { config.hoverBoost = config.hoverBoost === false; saveConfig(); pushAll(); buildTray() },
     },
     { type: 'separator' },
     {
-      label: 'Luôn nổi trên cùng', type: 'checkbox', checked: config.alwaysOnTop !== false,
+      label: strings.trayAlwaysOnTop, type: 'checkbox', checked: config.alwaysOnTop !== false,
       click: () => { config.alwaysOnTop = config.alwaysOnTop === false; saveConfig(); applyAlwaysOnTop(); buildTray() },
     },
     {
-      label: config.locked ? '🔓 Mở khoá vị trí' : '🔒 Khoá vị trí',
+      label: config.locked ? strings.trayUnlock : strings.trayLock,
       click: toggleLocked,
     },
     {
-      label: 'Khởi động cùng máy', type: 'checkbox', checked: !!config.launchAtLogin,
+      label: strings.trayAutostart, type: 'checkbox', checked: !!config.launchAtLogin,
       click: () => { config.launchAtLogin = !config.launchAtLogin; saveConfig(); applyLoginItem(); buildTray() },
     },
     { type: 'separator' },
-    { label: 'Làm mới ngay', click: () => { void refreshNowResult() } },
-    { label: 'Cài đặt…', click: openSettings },
+    { label: strings.trayRefreshNow, click: () => { void refreshNowResult() } },
+    { label: strings.traySettings, click: openSettings },
     { type: 'separator' },
-    { label: 'Mở thư mục cấu hình', click: () => shell.openPath(CONFIG_DIR) },
-    { label: 'Thoát', click: () => app.quit() },
+    { label: strings.trayOpenConfigFolder, click: () => shell.openPath(CONFIG_DIR) },
+    { label: strings.trayQuit, click: () => app.quit() },
   ]))
 }
 
@@ -500,7 +516,7 @@ function toggleWindow() {
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.focus(); return }
   settingsWin = new BrowserWindow({
-    width: 400, height: 700, title: 'Cài đặt — AI Usage Widget', resizable: true,
+    width: 400, height: 700, title: s().settingsWindowTitle, resizable: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload-settings.js'),
       contextIsolation: true, nodeIntegration: false, sandbox: true,
@@ -536,6 +552,7 @@ ipcMain.on('content-height', (e, h) => {
 })
 ipcMain.on('open-settings', (e) => { if (isWidgetSender(e)) openSettings() })   // nút ⚙ trên widget
 ipcMain.handle('get-config', (e) => (isSettingsSender(e) ? config : null))
+ipcMain.handle('get-strings', (e) => (isSettingsSender(e) ? s() : null))
 ipcMain.handle('get-providers', (e) => (isSettingsSender(e) ? providers.catalog(config.disabledProviders) : []))
 ipcMain.handle('set-config', (e, rawPatch) => {
   if (!isSettingsSender(e)) return { ...config }
@@ -550,6 +567,10 @@ ipcMain.handle('set-config', (e, rawPatch) => {
   }
   config = { ...config, ...patch }
   saveConfig()
+  if ('lang' in patch && patch.lang !== before.lang) {
+    buildTray()
+    if (settingsWin && !settingsWin.isDestroyed()) settingsWin.setTitle(s().settingsWindowTitle)
+  }
   if ('layout' in patch && patch.layout !== before.layout) { lastContentHeight = 120; buildTray() }
   if ('width' in patch || 'corner' in patch || 'layout' in patch) applyWindowGeometry()
   if ('alertWarnPct' in patch || 'alertCritPct' in patch) alertState.clear()
@@ -569,7 +590,7 @@ ipcMain.handle('set-config', (e, rawPatch) => {
   // Đổi trần ngữ cảnh phải tính lại NGAY, không đợi hết nhịp 8 giây — cài đặt ở app này áp trực tiếp.
   if ('contextLimit' in patch) refreshLocal()
   pushAll()
-  return { ...config, hotkeyOk }
+  return { ...config, hotkeyOk, strings: s() }
 })
 ipcMain.handle('reset-config', (e) => {
   if (!isSettingsSender(e)) return config
@@ -598,7 +619,7 @@ ipcMain.handle('refresh-now', async (e) => {
 ipcMain.handle('export-config', async (e) => {
   if (!isSettingsSender(e)) return { ok: false }
   const { canceled, filePath } = await dialog.showSaveDialog({
-    title: 'Xuất cấu hình', defaultPath: 'ai-usage-widget-config.json',
+    title: s().exportDialogTitle, defaultPath: 'ai-usage-widget-config.json',
     filters: [{ name: 'JSON', extensions: ['json'] }],
   })
   if (canceled || !filePath) return { ok: false }
@@ -608,14 +629,14 @@ ipcMain.handle('export-config', async (e) => {
 ipcMain.handle('import-config', async (e) => {
   if (!isSettingsSender(e)) return { ok: false }
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    title: 'Nhập cấu hình', properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }],
+    title: s().importDialogTitle, properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }],
   })
   if (canceled || !filePaths || !filePaths[0]) return { ok: false }
   try {
     const raw = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'))
     const nextConfig = { ...DEFAULTS, ...sanitizeConfig(raw, DEFAULTS) }
     if (!trySwapHotkey(nextConfig.hotkey, config.hotkey)) {
-      return { ok: false, error: `Không thể đăng ký phím tắt "${nextConfig.hotkey}"; cấu hình cũ được giữ nguyên.` }
+      return { ok: false, error: i18n.fmt(s().importHotkeyFail, { hk: nextConfig.hotkey }) }
     }
     config = nextConfig
     saveConfig()

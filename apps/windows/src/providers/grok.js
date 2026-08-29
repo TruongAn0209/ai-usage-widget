@@ -373,4 +373,4 @@ async function fetchUsage(overrideDir) {
   return out;
 }
 
-module.exports = { id: ID, name: NAME, detect, fetchUsage, baseDir };
+module.exports = { id: ID, name: NAME, detect, fetchUsage, baseDir, _internals: { unframe, scan, readFieldPath, readVarint } };

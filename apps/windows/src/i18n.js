@@ -282,5 +282,5 @@ function translateError(code, s) {
   return s.errOther + ': ' + c;
 }
 
-module.exports = { getStrings, resolveLang, translateError };
+module.exports = { getStrings, resolveLang, translateError, DICTS };
 

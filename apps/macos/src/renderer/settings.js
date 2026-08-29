@@ -3,7 +3,78 @@
 const $ = (id) => document.getElementById(id)
 const FIELDS = ['layout', 'palette', 'compact', 'opacity', 'hoverBoost', 'width', 'showContext',
   'contextLimit', 'showForecast', 'topMetricOnly', 'alertsEnabled', 'alertWarnPct', 'alertCritPct',
-  'alwaysOnTop', 'locked', 'launchAtLogin', 'followClaudeCli', 'hotkey']
+  'alwaysOnTop', 'locked', 'launchAtLogin', 'followClaudeCli', 'hotkey', 'lang']
+
+// ---- Song ngữ: điền mọi nhãn tĩnh từ dict main.js gửi qua get-strings ------------------------
+let S = null
+function applyStrings(s) {
+  S = s
+  document.title = s.settingsWindowTitle
+  document.documentElement.lang = (localStorage.getItem('resolvedLang') || 'vi')
+  $('modeCompact').textContent = s.modeCompact
+  $('modeFull').textContent = s.modeFull
+  document.getElementById('settingsMode').setAttribute('aria-label', s.settingsModeLabel)
+  $('hDisplay').textContent = s.sectionDisplay
+  $('lblLayout').textContent = s.fieldLayout
+  const layoutOpts = { bars: s.optLayoutBars, rings: s.optLayoutRings, strip: s.optLayoutStrip, dashboard: s.optLayoutDashboard, terminal: s.optLayoutTerminal }
+  for (const opt of $('layout').options) opt.textContent = layoutOpts[opt.value]
+  $('lblPalette').textContent = s.fieldPalette
+  const palOpts = { espresso: s.optPalEspresso, dark: s.optPalDark, light: s.optPalLight, default: s.optPalDefault, catppuccin: s.optPalCatppuccin, dracula: s.optPalDracula, nord: s.optPalNord, gruvbox: s.optPalGruvbox }
+  for (const opt of $('palette').options) opt.textContent = palOpts[opt.value]
+  $('lblCompact').textContent = s.fieldCompactWidget
+  $('lblOpacity').textContent = s.fieldOpacity + ' '
+  $('hintOpacity').textContent = s.hintOpacity
+  $('lblHoverBoost').textContent = s.fieldHoverBoost
+  $('lblWidth').textContent = s.fieldWidth
+  $('lblShowContext').textContent = s.fieldShowContext
+  $('lblContextLimit').textContent = s.fieldContextLimit
+  $('optContextAuto').textContent = s.optContextAuto
+  $('hintContextLimit').textContent = s.hintContextLimit
+  $('lblShowForecast').textContent = s.fieldShowForecast
+  $('hintShowForecast').textContent = s.hintShowForecast
+  $('lblTopMetricOnly').textContent = s.fieldTopMetricOnly
+  $('hintTopMetricOnly').textContent = s.hintTopMetricOnly
+  $('lblPreset').textContent = s.fieldPreset
+  $('optPresetNone').textContent = s.optPresetNone
+  $('optPresetFull').textContent = s.optPresetFull
+  $('optPresetCompact').textContent = s.optPresetCompact
+  $('optPresetWork').textContent = s.optPresetWork
+
+  $('hProviders').textContent = s.sectionProviders
+  $('hintProvidersOrder').textContent = s.hintProvidersOrder
+
+  $('hConfig').textContent = s.sectionConfig
+  $('exportCfg').textContent = s.btnExportConfig
+  $('importCfg').textContent = s.btnImportConfig
+  $('hintConfigSafe').textContent = s.hintConfigSafe
+
+  $('hAlerts').textContent = s.sectionAlerts
+  $('lblAlertsEnabled').textContent = s.fieldAlertsEnabled
+  $('lblAlertWarn').textContent = s.fieldAlertWarn
+  $('lblAlertCrit').textContent = s.fieldAlertCrit
+
+  $('hRefreshRate').textContent = s.sectionRefreshRate
+  $('lblRefreshApi').textContent = s.fieldRefreshApi
+  $('hintRefreshApiFloor').textContent = s.hintRefreshApiFloor
+  $('lblRefreshLocal').textContent = s.fieldRefreshLocal
+
+  $('hSystem').textContent = s.sectionSystem
+  $('lblLanguage').textContent = s.fieldLanguage
+  $('optLangAuto').textContent = s.optLangAuto
+  $('optLangVi').textContent = s.optLangVi
+  $('optLangEn').textContent = s.optLangEn
+  $('lblAlwaysOnTop').textContent = s.fieldAlwaysOnTop
+  $('lblLocked').textContent = s.fieldLocked
+  $('lblFollowClaudeCli').textContent = s.fieldFollowClaudeCli
+  $('hintFollowClaudeCli').textContent = s.hintFollowClaudeCli
+  $('lblHotkey').textContent = s.fieldHotkey
+  $('hotkey').placeholder = s.hotkeyPlaceholder
+  $('lblLaunchAtLogin').textContent = s.fieldLaunchAtLogin
+  $('refresh').textContent = s.btnRefreshSettings
+  $('reset').textContent = s.btnReset
+  showOpacity()
+  renderProviders()
+}
 
 // mục "2 giao diện Cài đặt": công tắc Gọn/Đủ chỉ đổi LỚP HIỂN THỊ (ẩn/hiện .adv), không đụng
 // cấu hình widget — lưu sở thích riêng của cửa sổ Cài đặt bằng localStorage, không ghi config.json.
@@ -31,6 +102,7 @@ const PRESETS = {
 function showOpacity() { $('opacityVal').textContent = Math.round(Number($('opacity').value) * 100) + '%' }
 
 function fill(cfg) {
+  $('lang').value = cfg.lang || 'auto'
   $('layout').value = cfg.layout || 'bars'
   $('compact').checked = !!cfg.compact
   $('showForecast').checked = cfg.showForecast !== false
@@ -75,8 +147,10 @@ function push(patch, delay = 0) {
     const res = await window.api.setConfig(patch)
     // Phím tắt sai cú pháp phải BÁO RÕ, không được im lặng nuốt lỗi.
     if (patch.hotkey !== undefined) {
-      $('err').textContent = res.hotkeyOk === false ? '⚠️ Phím tắt này không dùng được — thử tổ hợp khác.' : ''
+      $('err').textContent = res.hotkeyOk === false ? S.hotkeyBad : ''
     }
+    // Đổi ngôn ngữ: main.js đã tính lại dict, áp ngay không đợi mở lại cửa sổ Cài đặt.
+    if (patch.lang !== undefined && res.strings) applyStrings(res.strings)
   }, delay))
 }
 
@@ -112,7 +186,7 @@ async function renderProviders() {
   list.forEach((p, i) => {
     const lb = document.createElement('label')
     const sp = document.createElement('span')
-    sp.textContent = p.name + (p.available ? '' : ' — chưa cài')
+    sp.textContent = p.name + (p.available ? '' : (S ? S.providerNotInstalled : ''))
     const cb = document.createElement('input')
     cb.type = 'checkbox'; cb.checked = p.enabled; cb.disabled = !p.available
     cb.addEventListener('input', () => {
@@ -129,9 +203,7 @@ async function renderProviders() {
   })
   // Antigravity chỉ đọc được khi tiến trình `agy` ĐANG CHẠY (RPC nội bộ) — lần đầu chưa từng bật
   // thì nó hiện "chưa cài", không phải lỗi. Bật agy lên là có trong ~15 giây.
-  $('providersHint').textContent = list.some((p) => !p.available)
-    ? 'Antigravity cần chạy `agy`; Grok cần đăng nhập Grok CLI.'
-    : ''
+  $('providersHint').textContent = list.some((p) => !p.available) && S ? S.providersHint : ''
 }
 
 function moveProvider(list, i, dir) {
@@ -157,9 +229,10 @@ $('preset').addEventListener('change', () => {
 
 // mục 12: xuất/nhập cấu hình — dùng hộp thoại file THẬT của macOS (không phải tải qua trình
 // duyệt), an toàn với CSP `default-src 'none'` vì toàn bộ việc đọc/ghi file làm ở main process.
+const tpl = (str, vars) => String(str).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`))
 $('exportCfg').addEventListener('click', async () => {
   const res = await window.api.exportConfig()
-  $('err').textContent = res.ok || res.ok === undefined ? '' : ('Lỗi xuất: ' + (res.error || 'không rõ'))
+  $('err').textContent = res.ok || res.ok === undefined ? '' : tpl(S.errExportFail, { msg: res.error || '?' })
 })
 $('importCfg').addEventListener('click', async () => {
   const res = await window.api.importConfig()
@@ -169,7 +242,7 @@ $('importCfg').addEventListener('click', async () => {
     disabled = res.config.disabledProviders || []
     providerOrder = res.config.providerOrder || []
     fill(res.config); renderProviders()
-  } else if (res.error) { $('err').textContent = 'Lỗi nhập: ' + res.error }
+  } else if (res.error) { $('err').textContent = tpl(S.errImportFail, { msg: res.error }) }
 })
 
 $('reset').addEventListener('click', async () => {
@@ -181,10 +254,10 @@ $('reset').addEventListener('click', async () => {
 })
 $('refresh').addEventListener('click', () => window.api.refreshNow())
 
+window.api.getStrings().then(applyStrings)
 window.api.getConfig().then((cfg) => {
   current = cfg
   disabled = cfg.disabledProviders || []
   providerOrder = cfg.providerOrder || []
   fill(cfg)
 })
-renderProviders()

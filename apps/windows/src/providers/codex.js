@@ -151,4 +151,4 @@ function fetchUsage(overrideDir) {
   });
 }
 
-module.exports = { id: ID, name: NAME, detect, fetchUsage, baseDir };
+module.exports = { id: ID, name: NAME, detect, fetchUsage, baseDir, _internals: { windowLabel, placeWindow, pct, toMs } };

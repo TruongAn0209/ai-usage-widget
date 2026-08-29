@@ -11,6 +11,7 @@
 const CORNERS = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
 const LAYOUTS = ['bars', 'rings', 'strip', 'dashboard', 'terminal']
 const PALETTES = ['espresso', 'dark', 'light', 'default', 'catppuccin', 'dracula', 'nord', 'gruvbox']
+const LANGS = ['auto', 'vi', 'en']
 
 function num(v, lo, hi, fallback) {
   const n = Number(v)
@@ -48,6 +49,7 @@ function sanitizeCustomPosition(v, fallback) {
 function sanitizeConfig(patch, base) {
   const p = patch && typeof patch === 'object' ? patch : {}
   const out = {}
+  if ('lang' in p) out.lang = pickEnum(p.lang, LANGS, base.lang)
   if ('corner' in p) out.corner = pickEnum(p.corner, CORNERS, base.corner)
   if ('customPosition' in p) out.customPosition = sanitizeCustomPosition(p.customPosition, base.customPosition)
   if ('palette' in p) out.palette = pickEnum(p.palette, PALETTES, base.palette)
@@ -87,4 +89,4 @@ function sanitizeConfig(patch, base) {
   return out
 }
 
-module.exports = { sanitizeConfig, CORNERS, LAYOUTS, PALETTES }
+module.exports = { sanitizeConfig, CORNERS, LAYOUTS, PALETTES, LANGS }

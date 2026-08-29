@@ -11,15 +11,17 @@
   <div id="card">
     <div id="drag">
       <span class="dot"></span><span class="title" id="titleText">AI Usage</span><span class="plan" id="plan"></span>
-      <button id="btn-refresh" class="hbtn" title="Làm mới ngay" aria-label="Làm mới ngay">⟳</button>
-      <button id="btn-settings" class="hbtn" title="Cài đặt" aria-label="Cài đặt">⚙</button>
+      <button id="btn-refresh" class="hbtn" title="Refresh" aria-label="Refresh">⟳</button>
+      <button id="btn-settings" class="hbtn" title="Settings" aria-label="Settings">⚙</button>
     </div>
     <div id="status"></div>
-    <div id="body"><div class="msg">Đang đọc…</div></div>
+    <!-- Chuỗi tĩnh dưới đây chỉ hiện trong CHỚP NHOÁNG trước lượt push dữ liệu đầu tiên từ main.js
+         (kèm strings đã dịch) — render() ghi đè ngay sau đó, xem renderer.js. -->
+    <div id="body"><div class="msg">…</div></div>
     <!-- Panel mở rộng: số phiên/hôm nay. Bố cục "strip" ẩn hẳn phần này cho thật gọn.
          ★ mục 13: PHẢI là <button> có aria-expanded — trước đây là <div> chỉ nghe 'click', bấm
          Tab không tới được, đọc màn hình không biết đang mở/đóng. -->
-    <button id="expand" type="button" class="expand-hint" title="Xem thêm" aria-expanded="false">▾</button>
+    <button id="expand" type="button" class="expand-hint" title="" aria-expanded="false">▾</button>
     <div id="panel"></div>
     <div id="foot"><span id="updated"></span><span class="spacer"></span><span id="sessions"></span></div>
   </div>

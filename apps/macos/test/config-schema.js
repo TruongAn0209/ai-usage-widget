@@ -71,5 +71,11 @@ check('contextLimit: "không phải số" → giữ "auto"', sanitizeConfig({ co
 console.log('\n--- Chỉ đổi ĐÚNG khoá có trong patch, không đụng khoá khác ---')
 check('patch chỉ có width → không có khoá layout trong kết quả', 'layout' in sanitizeConfig({ width: 300 }, BASE), false)
 
+console.log('\n--- mục i18n: lang chỉ nhận auto/vi/en ---')
+check('lang: "en" hợp lệ → nhận', sanitizeConfig({ lang: 'en' }, BASE).lang, 'en')
+check('lang: "vi" hợp lệ → nhận', sanitizeConfig({ lang: 'vi' }, BASE).lang, 'vi')
+check('lang: "auto" hợp lệ → nhận', sanitizeConfig({ lang: 'auto' }, BASE).lang, 'auto')
+check('lang: "fr" không hợp lệ → giữ giá trị cũ', sanitizeConfig({ lang: 'fr' }, { ...BASE, lang: 'auto' }).lang, 'auto')
+
 console.log(fail ? `\n❌ ${fail} ca sai` : '\n✅ tất cả đạt')
 process.exit(fail ? 1 : 0)

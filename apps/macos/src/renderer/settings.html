@@ -4,100 +4,104 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'" />
   <link rel="stylesheet" href="settings.css" />
-  <title>Cài đặt</title>
+  <title>Settings</title>
 </head>
 <body>
-  <div id="settingsMode" role="tablist" aria-label="Mức độ cài đặt">
-    <button id="modeCompact" role="tab" type="button">Gọn</button>
-    <button id="modeFull" role="tab" type="button">Đủ</button>
+  <div id="settingsMode" role="tablist" aria-label="Settings level">
+    <button id="modeCompact" role="tab" type="button"></button>
+    <button id="modeFull" role="tab" type="button"></button>
   </div>
 
-  <h2>Hiển thị</h2>
-  <label><span>Bố cục</span>
+  <h2 id="hDisplay"></h2>
+  <label><span id="lblLayout"></span>
     <select id="layout">
-      <option value="bars">Thanh ngang</option>
-      <option value="rings">Vòng tròn</option>
-      <option value="strip">Dải siêu gọn</option>
-      <option value="dashboard">Bảng lớn</option>
-      <option value="terminal">Terminal</option>
+      <option value="bars"></option>
+      <option value="rings"></option>
+      <option value="strip"></option>
+      <option value="dashboard"></option>
+      <option value="terminal"></option>
     </select>
   </label>
-  <label><span>Bảng màu</span>
+  <label><span id="lblPalette"></span>
     <select id="palette">
-      <option value="espresso">Espresso</option>
-      <option value="dark">Tối</option>
-      <option value="light">Sáng</option>
-      <option value="default">Cyan</option>
-      <option value="catppuccin">Catppuccin</option>
-      <option value="dracula">Dracula</option>
-      <option value="nord">Nord</option>
-      <option value="gruvbox">Gruvbox</option>
+      <option value="espresso"></option>
+      <option value="dark"></option>
+      <option value="light"></option>
+      <option value="default"></option>
+      <option value="catppuccin"></option>
+      <option value="dracula"></option>
+      <option value="nord"></option>
+      <option value="gruvbox"></option>
     </select>
   </label>
-  <label class="adv"><span>Chế độ gọn (widget)</span><input type="checkbox" id="compact" /></label>
-  <label class="adv"><span>Độ trong <b id="opacityVal" class="bold"></b></span>
+  <label class="adv"><span id="lblCompact"></span><input type="checkbox" id="compact" /></label>
+  <label class="adv"><span id="lblOpacity"></span><b id="opacityVal" class="bold"></b>
     <input type="range" id="opacity" min="0.15" max="1" step="0.05" /></label>
-  <div class="hint adv">Kéo sang trái = trong suốt hơn. Đổi nhanh được ở menu khay hệ thống.</div>
-  <label class="adv"><span>Rõ lên khi rê chuột</span><input type="checkbox" id="hoverBoost" /></label>
-  <label class="adv"><span>Bề ngang (px)</span><input type="number" id="width" min="200" max="460" step="10" /></label>
-  <label class="adv"><span>Hiện ngữ cảnh phiên</span><input type="checkbox" id="showContext" /></label>
-  <label class="adv"><span>Trần ngữ cảnh</span>
+  <div class="hint adv" id="hintOpacity"></div>
+  <label class="adv"><span id="lblHoverBoost"></span><input type="checkbox" id="hoverBoost" /></label>
+  <label class="adv"><span id="lblWidth"></span><input type="number" id="width" min="200" max="460" step="10" /></label>
+  <label class="adv"><span id="lblShowContext"></span><input type="checkbox" id="showContext" /></label>
+  <label class="adv"><span id="lblContextLimit"></span>
     <select id="contextLimit">
-      <option value="auto">Tự động</option>
+      <option value="auto" id="optContextAuto"></option>
       <option value="200000">200k</option>
       <option value="1000000">1M</option>
     </select>
   </label>
-  <div class="hint adv">Không file nào trên máy ghi cửa sổ thật của phiên, nên “Tự động” chỉ đoán được
-    khi đã dùng quá 200k token. Chạy Claude Code bản 1M thì chọn thẳng <b>1M</b> cho đúng.</div>
-  <label class="adv"><span>Dự báo lúc hết hạn mức</span><input type="checkbox" id="showForecast" /></label>
-  <div class="hint adv">Hiện “hết ~14:20” khi đo được tốc độ dùng thật (cần vài nhịp làm mới). Không đủ
-    dữ liệu thì không hiện gì — thà im còn hơn doạ hão.</div>
-  <label class="adv"><span>Chỉ hiện mục cao nhất mỗi AI</span><input type="checkbox" id="topMetricOnly" /></label>
-  <div class="hint adv">1 AI có nhiều hạn mức con (Opus/Sonnet/tuần…) → chỉ giữ đúng mục ĐANG CĂNG NHẤT
-    cho gọn, liếc là biết ngay chỗ cần chú ý.</div>
-  <label><span>Xem nhanh</span>
+  <div class="hint adv" id="hintContextLimit"></div>
+  <label class="adv"><span id="lblShowForecast"></span><input type="checkbox" id="showForecast" /></label>
+  <div class="hint adv" id="hintShowForecast"></div>
+  <label class="adv"><span id="lblTopMetricOnly"></span><input type="checkbox" id="topMetricOnly" /></label>
+  <div class="hint adv" id="hintTopMetricOnly"></div>
+  <label><span id="lblPreset"></span>
     <select id="preset">
-      <option value="">— chọn preset —</option>
-      <option value="full">Đầy đủ</option>
-      <option value="compact">Widget gọn</option>
-      <option value="work">Công việc</option>
+      <option value="" id="optPresetNone"></option>
+      <option value="full" id="optPresetFull"></option>
+      <option value="compact" id="optPresetCompact"></option>
+      <option value="work" id="optPresetWork"></option>
     </select>
   </label>
 
-  <h2>AI hiển thị</h2>
-  <div class="hint">Kéo ↑↓ để đổi thứ tự AI hiện trên widget.</div>
+  <h2 id="hProviders"></h2>
+  <div class="hint" id="hintProvidersOrder"></div>
   <div id="providers"></div>
   <div class="hint" id="providersHint"></div>
 
-  <h2 class="adv">Cấu hình</h2>
+  <h2 class="adv" id="hConfig"></h2>
   <div class="row-flex adv">
-    <button id="exportCfg">Xuất cấu hình…</button>
-    <button id="importCfg">Nhập cấu hình…</button>
+    <button id="exportCfg"></button>
+    <button id="importCfg"></button>
   </div>
-  <div class="hint adv">Cấu hình KHÔNG chứa token/mật khẩu nào — an toàn khi gửi cho máy khác.</div>
+  <div class="hint adv" id="hintConfigSafe"></div>
 
-  <h2>Cảnh báo</h2>
-  <label><span>Bật cảnh báo</span><input type="checkbox" id="alertsEnabled" /></label>
-  <label><span>Mức vàng (%)</span><input type="number" id="alertWarnPct" min="10" max="99" /></label>
-  <label><span>Mức đỏ (%)</span><input type="number" id="alertCritPct" min="20" max="100" /></label>
+  <h2 id="hAlerts"></h2>
+  <label><span id="lblAlertsEnabled"></span><input type="checkbox" id="alertsEnabled" /></label>
+  <label><span id="lblAlertWarn"></span><input type="number" id="alertWarnPct" min="10" max="99" /></label>
+  <label><span id="lblAlertCrit"></span><input type="number" id="alertCritPct" min="20" max="100" /></label>
 
-  <h2 class="adv">Nhịp làm mới</h2>
-  <label class="adv"><span>Hạn mức (giây)</span><input type="number" id="refreshApiSec" min="180" max="3600" step="30" /></label>
-  <div class="hint adv">Sàn 180 giây — thấp hơn là Anthropic trả lỗi 429.</div>
-  <label class="adv"><span>Ngữ cảnh (giây)</span><input type="number" id="refreshLocalSec" min="2" max="120" /></label>
+  <h2 class="adv" id="hRefreshRate"></h2>
+  <label class="adv"><span id="lblRefreshApi"></span><input type="number" id="refreshApiSec" min="180" max="3600" step="30" /></label>
+  <div class="hint adv" id="hintRefreshApiFloor"></div>
+  <label class="adv"><span id="lblRefreshLocal"></span><input type="number" id="refreshLocalSec" min="2" max="120" /></label>
 
-  <h2>Hệ thống</h2>
-  <label><span>Luôn nổi trên cùng</span><input type="checkbox" id="alwaysOnTop" /></label>
-  <label><span>Khóa vị trí (vẫn bấm được nút)</span><input type="checkbox" id="locked" /></label>
-  <label class="adv"><span>Chỉ hiện khi Claude CLI hoặc IDE đang làm việc</span><input type="checkbox" id="followClaudeCli" /></label>
-  <div class="hint adv">Widget hiện khi Terminal có Claude CLI hoặc cửa sổ Claude IDE đang được thao tác; tự ẩn khi cả hai đều ở nền.</div>
-  <label class="adv"><span>Phím tắt ẩn/hiện</span><input type="text" id="hotkey" placeholder="để trống = tắt" /></label>
-  <label class="adv"><span>Khởi động cùng máy</span><input type="checkbox" id="launchAtLogin" /></label>
+  <h2 id="hSystem"></h2>
+  <label><span id="lblLanguage"></span>
+    <select id="lang">
+      <option value="auto" id="optLangAuto"></option>
+      <option value="vi" id="optLangVi"></option>
+      <option value="en" id="optLangEn"></option>
+    </select>
+  </label>
+  <label><span id="lblAlwaysOnTop"></span><input type="checkbox" id="alwaysOnTop" /></label>
+  <label><span id="lblLocked"></span><input type="checkbox" id="locked" /></label>
+  <label class="adv"><span id="lblFollowClaudeCli"></span><input type="checkbox" id="followClaudeCli" /></label>
+  <div class="hint adv" id="hintFollowClaudeCli"></div>
+  <label class="adv"><span id="lblHotkey"></span><input type="text" id="hotkey" /></label>
+  <label class="adv"><span id="lblLaunchAtLogin"></span><input type="checkbox" id="launchAtLogin" /></label>
   <div id="err"></div>
   <div class="row-flex row-flex-top">
-    <button id="refresh">Làm mới ngay</button>
-    <button id="reset" class="adv">Khôi phục mặc định</button>
+    <button id="refresh"></button>
+    <button id="reset" class="adv"></button>
   </div>
   <script src="settings.js"></script>
 </body>
