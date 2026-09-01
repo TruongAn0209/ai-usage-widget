@@ -73,6 +73,9 @@ function sanitizeConfig(patch, base) {
   if ('alertWarnPct' in p) out.alertWarnPct = num(p.alertWarnPct, 1, 99, base.alertWarnPct)
   if ('alertCritPct' in p) out.alertCritPct = num(p.alertCritPct, 2, 100, base.alertCritPct)
   if ('hotkey' in p) out.hotkey = typeof p.hotkey === 'string' ? p.hotkey.trim() : base.hotkey
+  // Hotkey toàn cục để ẩn terminal không cho automation đụng cửa sổ (Ghostty). Phải khớp với
+  // `keybind = global:...=toggle_visibility` trong config của terminal đó.
+  if ('terminalToggleHotkey' in p) out.terminalToggleHotkey = typeof p.terminalToggleHotkey === 'string' ? p.terminalToggleHotkey.trim() : base.terminalToggleHotkey
   if ('showContext' in p) out.showContext = bool(p.showContext, base.showContext)
   if ('contextLimit' in p) out.contextLimit = sanitizeContextLimit(p.contextLimit, base.contextLimit)
 

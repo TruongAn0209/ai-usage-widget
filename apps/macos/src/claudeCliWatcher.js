@@ -34,6 +34,11 @@ const KNOWN_TERMINAL_APPS = ['Terminal', 'iTerm2', 'iTerm', 'Ghostty', 'WezTerm'
 // loại bẫy đã cắn `pgrep -x claude` hồi 02/08/2026, nên mọi so khớp đều không phân biệt hoa/thường.
 const DEFAULT_TERMINAL_TARGET = Object.freeze({ app: 'Terminal', process: 'Terminal' })
 
+// Phải KHỚP với dòng trong ~/.config/ghostty/config:
+//   keybind = global:cmd+ctrl+opt+shift+u=toggle_visibility
+// Đổi ở đây thì phải đổi cả bên đó, nếu không chiều widget → terminal im lặng không làm gì.
+const DEFAULT_TERMINAL_TOGGLE_HOTKEY = 'cmd+ctrl+opt+shift+u'
+
 // Một lệnh osascript lấy CẢ app đang frontmost lẫn danh sách app có giao diện. Gộp lại để nhịp
 // poll 8 giây không phải bắn 10 lệnh "app X is running" cho từng terminal trong danh mục.
 const DESKTOP_SNAPSHOT_SCRIPT = [
@@ -70,6 +75,28 @@ function appMinimizeScript(appName) {
 
 function appRestoreScript(appName) {
   return `tell application "${appName}" to set miniaturized of every window to false`
+}
+
+// Gõ một tổ hợp phím vào hệ thống. Dùng cho terminal không cho automation đụng cửa sổ nhưng CÓ
+// hotkey toàn cục của riêng nó (Ghostty: `keybind = global:...=toggle_visibility`).
+// Chuỗi hotkey dạng "cmd+ctrl+opt+shift+u" — phần cuối là ký tự, các phần trước là phím bổ trợ.
+const MODIFIER_WORDS = {
+  cmd: 'command down', command: 'command down',
+  ctrl: 'control down', control: 'control down',
+  opt: 'option down', option: 'option down', alt: 'option down',
+  shift: 'shift down',
+}
+
+function buildKeystrokeScript(hotkey) {
+  const parts = String(hotkey || '').split('+').map((x) => x.trim().toLowerCase()).filter(Boolean)
+  const key = parts.pop()
+  // Chỉ nhận đúng MỘT ký tự: `keystroke` gõ chuỗi, nên "esc"/"f1" mà lọt vào sẽ bị gõ ra thành
+  // chữ trong terminal của An thay vì bấm phím — thà từ chối còn hơn gõ rác vào phiên đang chạy.
+  if (!key || key.length !== 1) return null
+  const mods = parts.map((m) => MODIFIER_WORDS[m]).filter(Boolean)
+  if (mods.length !== parts.length) return null
+  const using = mods.length ? ` using {${mods.join(', ')}}` : ''
+  return `tell application "System Events" to keystroke "${key}"${using}`
 }
 
 function runFile(execFile, file, args) {
@@ -233,7 +260,7 @@ function isAutomationPermissionError(result) {
   return result?.error?.code === -1743 || text.includes('not authorized') || text.includes('không được phép')
 }
 
-async function setTerminalWindowState(state, execFile = childProcess.execFile, target = DEFAULT_TERMINAL_TARGET) {
+async function setTerminalWindowState(state, execFile = childProcess.execFile, target = DEFAULT_TERMINAL_TARGET, options = {}) {
   const app = target?.app || DEFAULT_TERMINAL_TARGET.app
   const script = state === 'minimized' ? appMinimizeScript(app) : appRestoreScript(app)
   const changed = await runFile(execFile, '/usr/bin/osascript', ['-e', script])
@@ -241,20 +268,43 @@ async function setTerminalWindowState(state, execFile = childProcess.execFile, t
     if (isAutomationPermissionError(changed)) {
       return { ok: false, permissionDenied: true, app, error: changed.error, stderr: changed.stderr }
     }
-    // Đo thật 01/09/2026 trên Ghostty: cả ba đường đều không thu nhỏ được cửa sổ — set
-    // `AXMinimized` bị nuốt lặng lẽ, `AXMinimizeButton` không đọc nổi value, Cmd+M không ăn.
-    // Terminal kiểu này chỉ đồng bộ được MỘT chiều (terminal → widget); nói thẳng ra bằng cờ
-    // `unsupported` để tầng trên tắt hẳn chiều ngược lại thay vì thử lại vô ích mỗi lần bấm.
+    // Terminal không expose cửa sổ cho AppleScript (Ghostty ném -1728). Đo thật 01/09/2026: với
+    // Ghostty thì set `AXMinimized`, bấm `AXMinimizeButton` và Cmd+M đều bị NUỐT LẶNG LẼ kể cả
+    // khi đã có đủ quyền Trợ năng — nên đường Accessibility là ngõ cụt, không phải chuyện quyền.
+    // Đường đi được là hotkey toàn cục của chính Ghostty gắn với action `toggle_visibility`.
     if (state === 'minimized') {
+      const viaHotkey = await hideViaToggleHotkey(target, options.toggleHotkey, execFile)
+      if (viaHotkey) return viaHotkey
       return { ok: false, unsupported: true, app, error: changed.error, stderr: changed.stderr }
     }
-    // Hiện lại thì `activate` là đủ và chạy được với mọi terminal đã đo, kể cả Ghostty.
+    // Hiện lại thì `activate` là đủ với mọi terminal đã đo, kể cả Ghostty đang bị ẩn hẳn bằng
+    // `toggle_visibility` — đo thật: visible false → activate → true. Dùng activate thay vì bắn
+    // lại hotkey vì hotkey là TOGGLE, bắn nhầm lúc đang hiện sẽ ẩn ngược.
   }
   if (state === 'visible') {
     const activated = await runFile(execFile, '/usr/bin/osascript', ['-e', appActivateScript(app)])
     if (activated.error) return { ok: false, permissionDenied: isAutomationPermissionError(activated), app, error: activated.error, stderr: activated.stderr }
   }
   return { ok: true, app }
+}
+
+// Ẩn terminal bằng hotkey toàn cục của chính nó. Trả về null nếu không dùng được đường này (không
+// cấu hình hotkey, hotkey sai cú pháp) để tầng gọi giữ nguyên kết luận `unsupported` như trước.
+async function hideViaToggleHotkey(target, hotkey, execFile) {
+  const keystroke = buildKeystrokeScript(hotkey)
+  if (!keystroke) return null
+  const app = target?.app || DEFAULT_TERMINAL_TARGET.app
+
+  // `toggle_visibility` là TOGGLE, không phải "ẩn". Phải đọc trạng thái trước, nếu app đã ẩn sẵn
+  // mà vẫn bắn thì hoá ra lại HIỆN nó lên — đúng ngược ý người dùng.
+  const visible = await runFile(execFile, '/usr/bin/osascript', ['-e', axAppVisibleScript(target.process)])
+  if (!visible.error && visible.stdout.trim().toLowerCase() === 'false') return { ok: true, app, alreadyHidden: true }
+
+  const sent = await runFile(execFile, '/usr/bin/osascript', ['-e', keystroke])
+  if (sent.error) {
+    return { ok: false, permissionDenied: isAutomationPermissionError(sent), app, error: sent.error, stderr: sent.stderr }
+  }
+  return { ok: true, app, viaHotkey: true }
 }
 
 async function getClaudeCliState(execFile = childProcess.execFile) {
@@ -286,6 +336,8 @@ module.exports = {
   setTerminalWindowState,
   isAutomationPermissionError,
   isClaudeCliWithVisibleTerminal,
+  buildKeystrokeScript,
+  DEFAULT_TERMINAL_TOGGLE_HOTKEY,
   KNOWN_TERMINAL_APPS,
   DEFAULT_TERMINAL_TARGET,
   DESKTOP_SNAPSHOT_SCRIPT,

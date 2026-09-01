@@ -12,7 +12,7 @@ const i18n = require('./i18n')
 const providerState = require('./providerState')
 const { trySwapHotkey: swapHotkey } = require('./hotkey')
 const { providerResults, aggregateRefreshResults } = require('./refreshResult')
-const { getClaudeWorkState, getTerminalState, setTerminalWindowState } = require('./claudeCliWatcher')
+const { getClaudeWorkState, getTerminalState, setTerminalWindowState, DEFAULT_TERMINAL_TOGGLE_HOTKEY } = require('./claudeCliWatcher')
 const { createTerminalWidgetSync } = require('./terminalWidgetSync')
 
 // ---- Cấu hình -----------------------------------------------------------------
@@ -47,6 +47,9 @@ const DEFAULTS = {
   alertWarnPct: 80,
   alertCritPct: 95,
   hotkey: 'Control+Alt+U',
+  // Ghostty không cho automation thu nhỏ cửa sổ; ẩn nó bằng chính hotkey toàn cục của nó.
+  // Phải khớp `keybind = global:cmd+ctrl+opt+shift+u=toggle_visibility` trong config Ghostty.
+  terminalToggleHotkey: DEFAULT_TERMINAL_TOGGLE_HOTKEY,
   showContext: true,
   // Trần ngữ cảnh: 'auto' = tự suy (xem contextLimitFor), hoặc số token đặt tay ('200000'/'1000000').
   // Đặt tay là cách DUY NHẤT đúng 100% — không file nào trên máy ghi cửa sổ thật của phiên.
@@ -98,7 +101,7 @@ let watcherSeq = 0
 const terminalWidgetSync = createTerminalWidgetSync({
   getTerminalState,
   // Bộ điều phối chỉ biết (state, target); watcher nhận execFile ở giữa nên phải nối lại ở đây.
-  setTerminalWindowState: (state, target) => setTerminalWindowState(state, undefined, target),
+  setTerminalWindowState: (state, target) => setTerminalWindowState(state, undefined, target, { toggleHotkey: config.terminalToggleHotkey }),
   log: (message) => console.error(`[đồng bộ Terminal] ${message}`),
 })
 

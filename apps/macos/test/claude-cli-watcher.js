@@ -1,7 +1,7 @@
 // Giả lập execFile để kiểm logic mà không phụ thuộc Terminal/Claude thật và không bật hộp quyền
 // Automation của macOS trong lúc chạy unit test.
 const path = require('path')
-const { isClaudeCliWithVisibleTerminal, getTerminalState, getClaudeDesktopState, getClaudeWorkState, setTerminalWindowState, hasClaudeProcess, findRunningTerminals } = require('../src/claudeCliWatcher')
+const { isClaudeCliWithVisibleTerminal, getTerminalState, getClaudeDesktopState, getClaudeWorkState, setTerminalWindowState, hasClaudeProcess, findRunningTerminals, buildKeystrokeScript, DEFAULT_TERMINAL_TOGGLE_HOTKEY } = require('../src/claudeCliWatcher')
 const { createTerminalWidgetSync } = require('../src/terminalWidgetSync')
 
 let failed = 0
@@ -239,6 +239,60 @@ async function run() {
   await targetSync.toggleWidget(true)
   check('(ae) điều khiển đúng terminal đang dùng, không đè lên Terminal.app',
     passedTarget && passedTarget.app === 'Ghostty')
+
+
+  // ── Ghostty: an bang hotkey toan cuc cua chinh no (do that 01/09/2026) ──────────────────────
+  // Ghostty nuot moi cach thu nho qua Accessibility KE CA khi da co du quyen Tro nang (da xac
+  // minh: keystroke Cmd+N vao Finder chay binh thuong, rieng Ghostty khong nhuc nhich). Duong di
+  // duoc la action `toggle_visibility` cua chinh Ghostty, goi qua `keybind = global:...`.
+  check('(af) dung cu phap hotkey -> ra lenh keystroke', await (async () => {
+    const script = buildKeystrokeScript('cmd+ctrl+opt+shift+u')
+    return script.includes('keystroke "u"') && script.includes('command down') && script.includes('control down')
+      && script.includes('option down') && script.includes('shift down')
+  })())
+  check('(ag) hotkey mac dinh khop config Ghostty', DEFAULT_TERMINAL_TOGGLE_HOTKEY === 'cmd+ctrl+opt+shift+u')
+  // Tu choi phim khong-phai-ky-tu: `keystroke` GO CHUOI, nen "esc" lot vao se go chu "esc" vao
+  // terminal An dang lam viec thay vi bam phim.
+  check('(ah) tu choi hotkey khong phai 1 ky tu', buildKeystrokeScript('cmd+esc') === null)
+  check('(ai) tu choi phim bo tro la', buildKeystrokeScript('hyper+u') === null)
+  check('(aj) tu choi hotkey rong', buildKeystrokeScript('') === null && buildKeystrokeScript(null) === null)
+
+  // Gia lap Ghostty: lenh `set miniaturized` nem -1728, moi lenh khac chay.
+  function ghosttyExecWithHotkey({ appVisible = 'true' } = {}) {
+    const sentKeys = []
+    const exec = (file, args, _options, callback) => {
+      const script = args[1] || ''
+      if (script.includes('set miniaturized')) return callback(Object.assign(new Error('-1728'), { code: 1 }), '', '')
+      if (script.includes('get visible of application process')) return callback(null, appVisible + '\n', '')
+      if (script.includes('keystroke')) { sentKeys.push(script); return callback(null, '', '') }
+      callback(null, '', '')
+    }
+    return { exec, sentKeys }
+  }
+
+  const gh = ghosttyExecWithHotkey()
+  const hidden = await setTerminalWindowState('minimized', gh.exec, { app: 'Ghostty', process: 'ghostty' }, { toggleHotkey: 'cmd+ctrl+opt+shift+u' })
+  check('(ak) ★ Ghostty AN duoc bang hotkey toan cuc',
+    hidden.ok === true && hidden.viaHotkey === true && gh.sentKeys.length === 1)
+
+  // Bay that: `toggle_visibility` la TOGGLE. App da an san ma van ban thi hoa ra HIEN len — dung
+  // nguoc y nguoi dung. Phai doc trang thai truoc khi ban.
+  const ghHidden = ghosttyExecWithHotkey({ appVisible: 'false' })
+  const again = await setTerminalWindowState('minimized', ghHidden.exec, { app: 'Ghostty', process: 'ghostty' }, { toggleHotkey: 'cmd+ctrl+opt+shift+u' })
+  check('(al) ★ Ghostty da an san -> KHONG ban toggle (tranh hien nguoc)',
+    again.ok === true && again.alreadyHidden === true && ghHidden.sentKeys.length === 0)
+
+  // Khong cau hinh hotkey thi giu nguyen ket luan cu, khong im lang gia vo da lam.
+  const ghNoKey = ghosttyExecWithHotkey()
+  const noKey = await setTerminalWindowState('minimized', ghNoKey.exec, { app: 'Ghostty', process: 'ghostty' }, {})
+  check('(am) khong co hotkey -> van bao unsupported, khong noi doi',
+    !noKey.ok && noKey.unsupported === true && ghNoKey.sentKeys.length === 0)
+
+  // Hien lai dung `activate`, KHONG ban lai hotkey (ban nham luc dang hien se an nguoc).
+  const ghShow = ghosttyExecWithHotkey({ appVisible: 'false' })
+  const shown = await setTerminalWindowState('visible', ghShow.exec, { app: 'Ghostty', process: 'ghostty' }, { toggleHotkey: 'cmd+ctrl+opt+shift+u' })
+  check('(an) ★ hien lai bang activate, khong ban hotkey',
+    shown.ok === true && ghShow.sentKeys.length === 0)
 
   if (failed) process.exit(1)
   console.log('\n✅ tất cả đạt')
