@@ -13,12 +13,20 @@ function createTerminalWidgetSync({ getTerminalState, setTerminalWindowState, lo
         (target === 'visible' && terminal.state === 'visible')) {
       return { target, terminal, synced: false, origin: SyncOrigin.WIDGET }
     }
-    const result = await setTerminalWindowState(target)
+    // Truyền theo terminal vừa dò được: máy này có thể đang dùng Ghostty/iTerm chứ không
+    // phải Terminal.app, điều khiển nhầm app là ẩn/hiện oan cửa sổ của người khác.
+    const result = await setTerminalWindowState(target, terminal.target)
     if (!result.ok) {
+      const appName = result.app || 'Terminal.app'
       if (result.permissionDenied) {
         terminalSyncDisabled = true
-        log('Không có quyền Automation điều khiển Terminal.app; tạm tắt đồng bộ widget → Terminal cho phiên này.')
-      } else log(`Không thể đổi trạng thái Terminal.app: ${result.error?.message || 'lỗi không xác định'}`)
+        log(`Không có quyền Automation điều khiển ${appName}; tạm tắt đồng bộ widget → terminal cho phiên này.`)
+      } else if (result.unsupported) {
+        // Ghostty (đo thật 01/09/2026) không cho automation thu nhỏ cửa sổ bằng bất kỳ đường nào.
+        // Tắt hẳn chiều này thay vì thử lại vô ích mỗi lần bấm; chiều terminal → widget vẫn chạy.
+        terminalSyncDisabled = true
+        log(`${appName} không cho phép thu nhỏ cửa sổ bằng automation; chỉ đồng bộ một chiều terminal → widget.`)
+      } else log(`Không thể đổi trạng thái ${appName}: ${result.error?.message || 'lỗi không xác định'}`)
       return { target, terminal, synced: false, origin: SyncOrigin.WIDGET, result }
     }
     guard = { expected: target, origin: SyncOrigin.WIDGET }

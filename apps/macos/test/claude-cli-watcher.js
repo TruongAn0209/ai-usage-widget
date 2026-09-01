@@ -1,7 +1,7 @@
 // Giả lập execFile để kiểm logic mà không phụ thuộc Terminal/Claude thật và không bật hộp quyền
 // Automation của macOS trong lúc chạy unit test.
 const path = require('path')
-const { isClaudeCliWithVisibleTerminal, getTerminalState, getClaudeDesktopState, getClaudeWorkState, setTerminalWindowState, hasClaudeProcess } = require('../src/claudeCliWatcher')
+const { isClaudeCliWithVisibleTerminal, getTerminalState, getClaudeDesktopState, getClaudeWorkState, setTerminalWindowState, hasClaudeProcess, findRunningTerminals } = require('../src/claudeCliWatcher')
 const { createTerminalWidgetSync } = require('../src/terminalWidgetSync')
 
 let failed = 0
@@ -147,6 +147,98 @@ async function run() {
   }
   const restore = await setTerminalWindowState('visible', restoreExec)
   check('(8) restore gồm un-minimize + activate', restore.ok && actionCalls === 2)
+
+
+  // ── Nhiều terminal (bug thật 01/09/2026: An chuyển sang Ghostty, widget ẩn vĩnh viễn) ────────
+  // Watcher chỉ hỏi `application "Terminal"` nên ra `closed` dù Claude Code đang chạy trong
+  // Ghostty ⇒ `active` luôn false ⇒ widget tự ẩn. Khoá lại toàn bộ đường mới bằng test.
+  //
+  // Ảnh chụp System Events trả về "<app frontmost>|<danh sách app có giao diện>".
+  function mockDesktop({ frontmost, processes, claude = true, appWindows, axMinimized, axAppVisible = 'true', snapshotBroken = false }) {
+    return (file, args, _options, callback) => {
+      const command = path.basename(file)
+      const script = args[1] || ''
+      if (command === 'pgrep') {
+        if (claude) return callback(null, '12345\n', '')
+        return callback(Object.assign(new Error('không tìm thấy'), { code: 1 }), '', '')
+      }
+      if (script.includes('background only is false')) {
+        if (snapshotBroken) return callback(new Error('-1743 not authorized'), '', '')
+        return callback(null, `${frontmost}|${processes.join(',')}\n`, '')
+      }
+      if (script.includes('visible of every window')) {
+        // Ghostty ném -1728 ở đây; ca nào không truyền appWindows là mô phỏng đúng hành vi đó.
+        if (appWindows === undefined) return callback(Object.assign(new Error('-1728'), { code: 1 }), '', '')
+        return callback(null, appWindows + '\n', '')
+      }
+      if (script.includes('get visible of application process')) return callback(null, axAppVisible + '\n', '')
+      if (script.includes('AXMinimized')) return callback(null, (axMinimized === undefined ? 'false' : axMinimized) + '\n', '')
+      if (script.includes('is running')) return callback(null, 'false\n', '')
+      callback(new Error('lệnh ngoài dự kiến: ' + script), '', '')
+    }
+  }
+
+  check('(q) tên tiến trình viết thường ("ghostty") vẫn khớp app "Ghostty"',
+    findRunningTerminals({ processes: ['Finder', 'ghostty'] }).some((t) => t.app === 'Ghostty' && t.process === 'ghostty'))
+  check('(r) app không phải terminal thì không nhận nhầm',
+    findRunningTerminals({ processes: ['Finder', 'Google Chrome', 'Spotify'] }).length === 0)
+
+  check('(s) ★ BUG GỐC: Claude Code chạy trong Ghostty đang hiện → widget PHẢI hiện',
+    (await getClaudeWorkState(mockDesktop({ frontmost: 'ghostty', processes: ['Finder', 'ghostty'] }))).active === true)
+  check('(t) Ghostty chạy nhưng An đang ở Chrome → minimized',
+    (await getTerminalState(mockDesktop({ frontmost: 'Google Chrome', processes: ['Google Chrome', 'ghostty'] }))).state === 'minimized')
+  check('(u) Ghostty frontmost nhưng mọi cửa sổ đã thu nhỏ → minimized',
+    (await getTerminalState(mockDesktop({ frontmost: 'ghostty', processes: ['ghostty'], axMinimized: 'true, true' }))).state === 'minimized')
+  check('(v) Ghostty bị ẩn cả app bằng Cmd+H → minimized',
+    (await getTerminalState(mockDesktop({ frontmost: 'ghostty', processes: ['ghostty'], axAppVisible: 'false' }))).state === 'minimized')
+  check('(w) Ghostty frontmost, không còn cửa sổ nào → minimized',
+    (await getTerminalState(mockDesktop({ frontmost: 'ghostty', processes: ['ghostty'], axMinimized: '' }))).state === 'minimized')
+  check('(x) không có terminal nào chạy → closed',
+    (await getTerminalState(mockDesktop({ frontmost: 'Finder', processes: ['Finder', 'Spotify'] }))).state === 'closed')
+  check('(y) Terminal.app vẫn đi đường scripting của chính app (không cần System Events)',
+    (await getTerminalState(mockDesktop({ frontmost: 'Terminal', processes: ['Terminal'], appWindows: 'false, true' }))).state === 'visible')
+  check('(z) state kèm target để biết điều khiển ĐÚNG app đang dùng', await (async () => {
+    const state = await getTerminalState(mockDesktop({ frontmost: 'ghostty', processes: ['Terminal', 'ghostty'] }))
+    return state.target && state.target.app === 'Ghostty'
+  })())
+
+  // Lưới an toàn: thiếu quyền Accessibility thì tụt về đường Terminal.app cũ, KHÔNG kết luận bừa
+  // "không có terminal nào" (kết luận đó sẽ ẩn widget oan).
+  check('(aa) ảnh chụp System Events lỗi → tụt về đường Terminal.app cũ, không ẩn oan',
+    (await getTerminalState(mockExec({ terminalRunning: true, frontmost: 'true' }))).state === 'visible')
+
+  // Đo thật 01/09/2026: Ghostty nuốt lệnh thu nhỏ ở cả 3 đường (set AXMinimized / AXPress nút
+  // minimize / Cmd+M). Phải báo `unsupported` để tầng trên tắt chiều widget → terminal, chứ
+  // không được im lặng coi như đã làm.
+  const ghosttyExec = (file, args, _options, callback) => {
+    const script = args[1] || ''
+    if (script.includes('set miniaturized')) return callback(Object.assign(new Error('-1728'), { code: 1 }), '', '')
+    callback(null, '', '')
+  }
+  const minimizeGhostty = await setTerminalWindowState('minimized', ghosttyExec, { app: 'Ghostty', process: 'ghostty' })
+  check('(ab) Ghostty không thu nhỏ được → báo unsupported, không nói dối là đã làm',
+    !minimizeGhostty.ok && minimizeGhostty.unsupported === true && minimizeGhostty.app === 'Ghostty')
+  const restoreGhostty = await setTerminalWindowState('visible', ghosttyExec, { app: 'Ghostty', process: 'ghostty' })
+  check('(ac) Ghostty vẫn HIỆN lại được bằng activate', restoreGhostty.ok === true)
+
+  let unsupportedCalls = 0
+  const unsupportedSync = createTerminalWidgetSync({
+    getTerminalState: async () => ({ state: 'visible', target: { app: 'Ghostty', process: 'ghostty' } }),
+    setTerminalWindowState: async () => { unsupportedCalls++; return { ok: false, unsupported: true, app: 'Ghostty' } },
+  })
+  await unsupportedSync.toggleWidget(true)
+  await unsupportedSync.toggleWidget(true)
+  check('(ad) terminal không điều khiển được → tắt chiều ngược, không thử lại mỗi lần bấm',
+    unsupportedCalls === 1 && unsupportedSync.isTerminalSyncDisabled())
+
+  let passedTarget = null
+  const targetSync = createTerminalWidgetSync({
+    getTerminalState: async () => ({ state: 'visible', target: { app: 'Ghostty', process: 'ghostty' } }),
+    setTerminalWindowState: async (_state, target) => { passedTarget = target; return { ok: true } },
+  })
+  await targetSync.toggleWidget(true)
+  check('(ae) điều khiển đúng terminal đang dùng, không đè lên Terminal.app',
+    passedTarget && passedTarget.app === 'Ghostty')
 
   if (failed) process.exit(1)
   console.log('\n✅ tất cả đạt')

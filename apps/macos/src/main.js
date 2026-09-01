@@ -94,10 +94,11 @@ let isQuitting = false
 let autoHiddenByWatcher = false
 let watcherSeq = 0
 // Guard này là nguồn sự thật cho chiều widget → Terminal: lượt poll kế tiếp không echo lại
-// hành động vừa do người dùng yêu cầu. Chỉ Terminal.app đang chạy mới được điều khiển; không relaunch.
+// hành động vừa do người dùng yêu cầu. Chỉ terminal ĐANG chạy mới được điều khiển; không relaunch.
 const terminalWidgetSync = createTerminalWidgetSync({
   getTerminalState,
-  setTerminalWindowState,
+  // Bộ điều phối chỉ biết (state, target); watcher nhận execFile ở giữa nên phải nối lại ở đây.
+  setTerminalWindowState: (state, target) => setTerminalWindowState(state, undefined, target),
   log: (message) => console.error(`[đồng bộ Terminal] ${message}`),
 })
 
