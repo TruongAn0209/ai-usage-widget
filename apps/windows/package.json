@@ -59,7 +59,7 @@
     "artifactName": "AI-Usage-Widget-${version}-Windows-${arch}-Setup.${ext}"
   },
   "devDependencies": {
-    "electron": "^44.0.0",
+    "electron": "^44.1.1",
     "electron-builder": "^26.15.3"
   }
 }
