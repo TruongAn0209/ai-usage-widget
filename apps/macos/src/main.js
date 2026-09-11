@@ -692,47 +692,36 @@ function trySwapHotkey(newHotkey, oldHotkey) {
   return swapHotkey(globalShortcut, toggleWindow, newHotkey, oldHotkey)
 }
 
-// ★ Chỉ tự khởi động app khi file này ĐÚNG LÀ tiến trình chính, không phải bị `require()` từ nơi
-//   khác (test/*.js có thể `require('../src/main.js')` để lấy các hàm THUẦN bên dưới — buildEntry,
-//   trySwapHotkey… — phục vụ test hồi quy mà KHÔNG mở cửa sổ thật/không tạo Tray/không gọi mạng).
-//   ⚠️ 29/08: `require.main === module` KHÔNG dùng được trong Electron — Electron tự nạp file
-//   "main" của package.json qua bootstrap riêng, `require.main` trỏ vào module nội bộ của Electron
-//   (filename = "electron") chứ không phải main.js, nên điều kiện này luôn SAI và app KHÔNG BAO GIỜ
-//   khởi động thật (dò ra 29/08: cửa sổ/tray/timer chưa từng chạy, chỉ có icon Dock đứng im). Dùng
-//   `!module.parent` thay thế — true khi file này được nạp trực tiếp (không ai `require()` nó),
-//   false khi một file khác `require('./main.js')` gọi vào (đúng ý muốn ban đầu của guard này).
-if (!module.parent) {
-  const gotLock = app.requestSingleInstanceLock()
-  if (!gotLock) {
-    app.quit()
-  } else {
-    app.on('second-instance', () => {
-      if (win) {
-        autoHiddenByWatcher = false
-        win.show()
-        applyWindowGeometry()
-      }
-    })
-    app.whenReady().then(() => {
-      loadConfig()
-      if (app.dock) app.dock.hide()   // widget ở khay, không chiếm chỗ Dock
-      createWindow()
-      applyLoginItem()
-      buildTray()
-      registerHotkey()
-      startTimers()
-    })
-    app.on('activate', () => {
-      if (win) {
-        autoHiddenByWatcher = false
-        win.show()
-        applyWindowGeometry()
-      }
-    })
-    app.on('window-all-closed', (e) => { e.preventDefault?.() })   // sống ở khay, đóng cửa sổ không thoát
-    app.on('before-quit', () => { isQuitting = true })   // cho close() thật đi qua khi bấm "Thoát"
-    app.on('will-quit', () => globalShortcut.unregisterAll())
-  }
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (win) {
+      autoHiddenByWatcher = false
+      win.show()
+      applyWindowGeometry()
+    }
+  })
+  app.whenReady().then(() => {
+    loadConfig()
+    if (app.dock) app.dock.hide()   // widget ở khay, không chiếm chỗ Dock
+    createWindow()
+    applyLoginItem()
+    buildTray()
+    registerHotkey()
+    startTimers()
+  })
+  app.on('activate', () => {
+    if (win) {
+      autoHiddenByWatcher = false
+      win.show()
+      applyWindowGeometry()
+    }
+  })
+  app.on('window-all-closed', (e) => { e.preventDefault?.() })   // sống ở khay, đóng cửa sổ không thoát
+  app.on('before-quit', () => { isQuitting = true })   // cho close() thật đi qua khi bấm "Thoát"
+  app.on('will-quit', () => globalShortcut.unregisterAll())
 }
 
 // Xuất hàm THUẦN cho test/main-logic.js — chỉ dùng trong tiến trình test (chạy qua
