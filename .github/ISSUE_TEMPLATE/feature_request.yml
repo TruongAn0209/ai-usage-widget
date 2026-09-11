@@ -1,0 +1,29 @@
+name: Feature Request / Đề xuất tính năng
+description: Gợi ý tính năng mới hoặc nhà cung cấp AI mới
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: "Cảm ơn bạn đã đóng góp ý tưởng để hoàn thiện AI Usage Widget!"
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề / Bối cảnh
+      description: Tính năng này giải quyết vấn đề gì trong quy trình làm việc của bạn?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Đề xuất giải pháp
+      description: Mô tả chi tiết tính năng bạn muốn có (nhà cung cấp AI, giao diện, phím tắt...)
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Giải pháp thay thế đã cân nhắc
+      description: Có cách giải quyết nào khác mà bạn đã thử hoặc nghĩ đến?
+    validations:
+      required: false

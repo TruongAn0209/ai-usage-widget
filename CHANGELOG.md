@@ -1,14 +1,14 @@
 # Lịch sử thay đổi
 
-## 1.4.1 — 2026-08-29
+## 1.4.1 — 2026-09-11
 
-- Hợp nhất mã Windows và macOS trong một kho công khai độc lập.
-- Thêm Claude Desktop/IDE fallback cho cả hai nền tảng.
-- Nâng Electron/electron-builder của Windows và xử lý toàn bộ cảnh báo phụ thuộc đã biết.
-- Thêm CI hai hệ điều hành, Release tự động và GitHub Pages.
-- Chuẩn hóa thương hiệu, quyền riêng tư, bảo mật và tài liệu đóng góp.
-- Khi OAuth Claude Code hết hạn hoặc không có, tự đọc hạn mức mới nhất do Claude Desktop/IDE lưu.
-- Chỉ dùng mẫu IDE trong 30 phút để không hiện nhầm số cũ.
+- **Nâng cấp giao diện Terminal (`layout: terminal`):** Thêm dòng phụ `  └─ ...` hiển thị chi tiết đếm ngược reset, dự báo ETA, và trạng thái offline/stale; nhóm model AI có header `// GROUP`.
+- **Thẻ trạng thái đa AI (Status Chips):** Đổi từ text xám mờ sang Pill Badges bo góc có chấm LED trạng thái động.
+- **Bảng màu mới:** Bổ sung `oled` (OLED Pure Black) và `tokyo-night` trên cả macOS và Windows.
+- **Trang Cài đặt nâng cấp:** Toggle switches native, Live Preview Mini-Card phản chiếu tức thì khi chọn bố cục/màu sắc, công tắc hiện % trên Menu Bar macOS.
+- **Icon SVG:** Thay toàn bộ ký tự text cũ bằng SVG icons sắc nét.
+- **Độ ổn định macOS:** Sửa lỗi app đóng gói bị chặn khởi tạo giao diện; bổ sung `singleInstanceLock` và tự động unhide/focus khi click lại app từ Finder/Spotlight.
+- **Đồng bộ song song:** Toàn bộ tính năng giao diện mới được đồng bộ 100% giữa hai nền tảng macOS và Windows.
 
 ## 1.4.0 — 2026-08-29
 

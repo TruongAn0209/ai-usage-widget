@@ -18,6 +18,11 @@
 
 ---
 
+<div align="center">
+  <img src="site/assets/widget-preview.png" width="300" alt="AI Usage Widget Preview">
+  <p><em>Terminal layout: live quota bars, reset countdowns, provider chips & session context</em></p>
+</div>
+
 AI Usage Widget stays above your work and shows usage windows, reset times, local session context
 and today’s activity without a separate account or analytics backend. It detects supported AI
 tools already signed in on your computer.
