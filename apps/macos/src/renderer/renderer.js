@@ -261,6 +261,12 @@ function layoutTerminalLines(items) {
     const pc = document.createElement('span'); pc.className = 'term-pct ' + tone; pc.textContent = pctText(m)
     line.append(key, bar, pc)
     frag.append(line)
+    if (m.note) {
+      const sub = document.createElement('div'); sub.className = 'term-note'
+      sub.textContent = '  └─ ' + m.note
+      sub.title = m.note
+      frag.append(sub)
+    }
   }
   return frag
 }
@@ -419,10 +425,28 @@ function render(data) {
   const tip = badList.map((p) => `${p.name}: ${errText(p.error)}`).join('\n')
   if (providers.length > 1) {
     plan.textContent = ''
-    status.textContent = providers.map((p) => (p.ok
-      ? p.name + (p.plan ? ' · ' + p.plan : '') + (p.stale ? ' ⚠' : '')
-      : '⚠ ' + p.name)).join('   ')
-    status.style.display = ''
+    status.textContent = ''
+    for (const p of providers) {
+      const chip = document.createElement('span')
+      chip.className = 'status-chip' + (p.ok ? (p.stale ? ' stale' : '') : ' err')
+      const dot = document.createElement('span')
+      dot.className = 'chip-dot'
+      const label = document.createElement('span')
+      label.className = 'chip-label'
+      label.textContent = p.name + (p.ok && p.plan ? ' · ' + p.plan : '')
+      chip.append(dot, label)
+      if (p.stale) {
+        const warn = document.createElement('span')
+        warn.className = 'chip-warn'
+        warn.textContent = '⚠'
+        chip.append(warn)
+      }
+      chip.title = p.ok
+        ? (p.stale ? `${p.name}: ${p.plan || ''}${S.staleNetwork || ' ⚠'}` : `${p.name}: ${p.plan || ''}`)
+        : `${p.name}: ${errText(p.error)}`
+      status.append(chip)
+    }
+    status.style.display = 'flex'
   } else {
     plan.textContent = okList.length ? (okList[0].plan || '') + (okList[0].stale ? S.staleNetwork : '') : ''
     status.textContent = ''

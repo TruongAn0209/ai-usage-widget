@@ -19,6 +19,75 @@ button { font: inherit; padding: 6px 12px; border-radius: 7px; border: 1px solid
 .row-flex { display: flex; gap: 8px }
 .row-flex-top { margin-top: 12px }
 
+/* Toggle switch kiểu macOS */
+input[type=checkbox] {
+  appearance: none; -webkit-appearance: none;
+  width: 34px; height: 18px; border-radius: 10px;
+  background: #d1d1d6; position: relative; outline: none;
+  cursor: pointer; transition: background .2s; flex: none;
+  border: 1px solid rgba(0,0,0,.1);
+}
+input[type=checkbox]:checked { background: #34c759; border-color: #30b852 }
+input[type=checkbox]::after {
+  content: ''; position: absolute; top: 1px; left: 1px;
+  width: 14px; height: 14px; border-radius: 50%; background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s ease;
+}
+input[type=checkbox]:checked::after { transform: translateX(16px) }
+@media (prefers-color-scheme: dark) {
+  input[type=checkbox] { background: #3a3a3c; border-color: rgba(255,255,255,.1) }
+}
+
+/* Card Xem trước (Live Preview) */
+.preview-card {
+  margin: 10px 0 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface, #222);
+  border: 1px solid var(--border, #444);
+  color: var(--text, #eee);
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+  transition: background .2s, border-color .2s;
+}
+.preview-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px }
+.preview-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #fdb) }
+.preview-title { font-size: 11px; font-weight: 600; flex: 1 }
+.preview-badge { font-size: 8px; text-transform: uppercase; padding: 1px 5px; border-radius: 6px; background: var(--surface-2, rgba(255,255,255,.1)); color: var(--text-dim, #999) }
+.preview-body { font-size: 11px }
+
+/* Preview các layout */
+.bars-preview .row { margin-bottom: 4px }
+.bars-preview .head { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px }
+.bars-preview .bar { height: 4px; border-radius: 2px; background: var(--surface-2, #333); overflow: hidden }
+.bars-preview .bar > i { display: block; height: 100%; border-radius: 2px; background: var(--ok, #4c4) }
+.bars-preview .bar > i.warn { background: var(--warn, #ea0) }
+.bars-preview .pct.warn { color: var(--warn, #ea0) }
+.bars-preview .note { font-size: 8.5px; color: var(--text-dim, #888); margin-top: 1px }
+
+.term-preview { font-family: ui-monospace, monospace; font-size: 10px; line-height: 1.5 }
+.term-preview .term-prompt { color: var(--accent, #fdb); font-size: 9.5px; margin-bottom: 2px }
+.term-preview .term-line { display: flex; justify-content: space-between; gap: 4px }
+.term-preview .term-key { color: var(--text-dim, #888); flex: 1 }
+.term-preview .term-bar { color: var(--ok, #4c4) }
+.term-preview .term-bar.warn { color: var(--warn, #ea0) }
+.term-preview .term-pct { font-weight: 700; color: var(--ok, #4c4) }
+.term-preview .term-pct.warn { color: var(--warn, #ea0) }
+.term-preview .term-note { font-size: 8.5px; color: var(--text-dim, #888); opacity: .8 }
+
+.rings-preview { display: flex; justify-content: space-around; padding: 4px 0 }
+.ring-preview-item { text-align: center; font-size: 8.5px; color: var(--text-dim, #888) }
+.mini-circle { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface-2, #444); border-top-color: var(--ok, #4c4); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 9px; color: var(--text, #eee); margin: 0 auto 2px }
+.mini-circle.warn { border-top-color: var(--warn, #ea0); border-right-color: var(--warn, #ea0) }
+
+.strip-preview { display: flex; gap: 6px }
+.strip-preview .strip-item { display: flex; align-items: center; gap: 4px; flex: 1 }
+.strip-preview .strip-tag { font-size: 8px; color: var(--text-dim, #888) }
+.strip-preview .strip-track { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2, #444); overflow: hidden }
+.strip-preview .strip-fill { height: 100%; background: var(--ok, #4c4); border-radius: 2px }
+.strip-preview .strip-fill.warn { background: var(--warn, #ea0) }
+.strip-preview .strip-pct { font-size: 9px; font-weight: 700; color: var(--ok, #4c4) }
+.strip-preview .strip-pct.warn { color: var(--warn, #ea0) }
+
 /* mục đề xuất 2: công tắc Gọn/Đủ — chỉ đổi lớp hiển thị, không đổi cấu hình widget. */
 #settingsMode { display: flex; gap: 6px; margin-bottom: 14px }
 #settingsMode button { flex: 1; padding: 6px 0; border-radius: 7px; border: 1px solid #c8c8c8;

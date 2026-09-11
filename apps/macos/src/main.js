@@ -54,6 +54,7 @@ const DEFAULTS = {
   // Trần ngữ cảnh: 'auto' = tự suy (xem contextLimitFor), hoặc số token đặt tay ('200000'/'1000000').
   // Đặt tay là cách DUY NHẤT đúng 100% — không file nào trên máy ghi cửa sổ thật của phiên.
   contextLimit: 'auto',
+  showTrayTitle: false, // Hiện % trên thanh Menu Bar của macOS
 }
 let config = { ...DEFAULTS }
 // Dict hiện hành theo config.lang + locale hệ thống — gọi lại mỗi lần cần (đổi ngôn ngữ trong Cài
@@ -374,8 +375,26 @@ function trayTooltip() {
   })
   return parts.join(' · ') || 'AI Usage'
 }
+function updateTrayTitle() {
+  if (!tray) return
+  if (!config.showTrayTitle) {
+    tray.setTitle('')
+    return
+  }
+  let topPct = null
+  for (const p of lastProviders || []) {
+    if (!p.ok) continue
+    for (const m of p.metrics || []) {
+      if (m.pct != null && (topPct == null || m.pct > topPct)) topPct = m.pct
+    }
+  }
+  tray.setTitle(topPct != null ? ` ${Math.round(topPct)}%` : '')
+}
 async function pushAll() {
-  if (tray) tray.setToolTip(trayTooltip())
+  if (tray) {
+    tray.setToolTip(trayTooltip())
+    updateTrayTitle()
+  }
   if (win && !win.isDestroyed()) {
     win.webContents.send('usage-data', {
       providers: lastProviders,

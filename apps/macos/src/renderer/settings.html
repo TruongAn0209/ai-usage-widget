@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'" />
+  <link rel="stylesheet" href="themes.css" />
   <link rel="stylesheet" href="settings.css" />
   <title>Settings</title>
 </head>
@@ -32,8 +33,19 @@
       <option value="dracula"></option>
       <option value="nord"></option>
       <option value="gruvbox"></option>
+      <option value="oled"></option>
+      <option value="tokyo-night"></option>
     </select>
   </label>
+
+  <div id="previewCard" class="preview-card" data-palette="espresso" data-layout="bars">
+    <div class="preview-header">
+      <span class="preview-dot"></span>
+      <span class="preview-title">AI Usage</span>
+      <span class="preview-badge">Live Preview</span>
+    </div>
+    <div id="previewBody" class="preview-body"></div>
+  </div>
   <label class="adv"><span id="lblCompact"></span><input type="checkbox" id="compact" /></label>
   <label class="adv"><span id="lblOpacity"></span><b id="opacityVal" class="bold"></b>
     <input type="range" id="opacity" min="0.15" max="1" step="0.05" /></label>
@@ -98,6 +110,7 @@
   <div class="hint adv" id="hintFollowClaudeCli"></div>
   <label class="adv"><span id="lblHotkey"></span><input type="text" id="hotkey" /></label>
   <label class="adv"><span id="lblLaunchAtLogin"></span><input type="checkbox" id="launchAtLogin" /></label>
+  <label class="adv"><span id="lblShowTrayTitle"></span><input type="checkbox" id="showTrayTitle" /></label>
   <div id="err"></div>
   <div class="row-flex row-flex-top">
     <button id="refresh"></button>

@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id)
 const FIELDS = ['layout', 'palette', 'compact', 'opacity', 'hoverBoost', 'width', 'showContext',
   'contextLimit', 'showForecast', 'topMetricOnly', 'alertsEnabled', 'alertWarnPct', 'alertCritPct',
-  'alwaysOnTop', 'locked', 'launchAtLogin', 'followClaudeCli', 'hotkey', 'lang']
+  'alwaysOnTop', 'locked', 'launchAtLogin', 'showTrayTitle', 'followClaudeCli', 'hotkey', 'lang']
 
 // ---- Song ngữ: điền mọi nhãn tĩnh từ dict main.js gửi qua get-strings ------------------------
 let S = null
@@ -19,7 +19,7 @@ function applyStrings(s) {
   const layoutOpts = { bars: s.optLayoutBars, rings: s.optLayoutRings, strip: s.optLayoutStrip, dashboard: s.optLayoutDashboard, terminal: s.optLayoutTerminal }
   for (const opt of $('layout').options) opt.textContent = layoutOpts[opt.value]
   $('lblPalette').textContent = s.fieldPalette
-  const palOpts = { espresso: s.optPalEspresso, dark: s.optPalDark, light: s.optPalLight, default: s.optPalDefault, catppuccin: s.optPalCatppuccin, dracula: s.optPalDracula, nord: s.optPalNord, gruvbox: s.optPalGruvbox }
+  const palOpts = { espresso: s.optPalEspresso, dark: s.optPalDark, light: s.optPalLight, default: s.optPalDefault, catppuccin: s.optPalCatppuccin, dracula: s.optPalDracula, nord: s.optPalNord, gruvbox: s.optPalGruvbox, oled: s.optPalOled, 'tokyo-night': s.optPalTokyoNight }
   for (const opt of $('palette').options) opt.textContent = palOpts[opt.value]
   $('lblCompact').textContent = s.fieldCompactWidget
   $('lblOpacity').textContent = s.fieldOpacity + ' '
@@ -70,6 +70,7 @@ function applyStrings(s) {
   $('lblHotkey').textContent = s.fieldHotkey
   $('hotkey').placeholder = s.hotkeyPlaceholder
   $('lblLaunchAtLogin').textContent = s.fieldLaunchAtLogin
+  $('lblShowTrayTitle').textContent = s.fieldShowTrayTitle
   $('refresh').textContent = s.btnRefreshSettings
   $('reset').textContent = s.btnReset
   showOpacity()
@@ -120,10 +121,62 @@ function fill(cfg) {
   $('alwaysOnTop').checked = cfg.alwaysOnTop !== false
   $('locked').checked = !!cfg.locked
   $('launchAtLogin').checked = !!cfg.launchAtLogin
+  $('showTrayTitle').checked = !!cfg.showTrayTitle
   $('followClaudeCli').checked = !!cfg.followClaudeCli
   $('hotkey').value = cfg.hotkey || ''
   $('refreshApiSec').value = Math.round(cfg.refreshApiMs / 1000)
   $('refreshLocalSec').value = Math.round(cfg.refreshLocalMs / 1000)
+  updatePreview()
+}
+
+function updatePreview() {
+  const card = $('previewCard')
+  if (!card) return
+  const pal = $('palette').value || 'espresso'
+  const lay = $('layout').value || 'bars'
+  card.dataset.palette = pal
+  card.dataset.layout = lay
+  const body = $('previewBody')
+  body.textContent = ''
+  if (lay === 'terminal') {
+    const term = document.createElement('div'); term.className = 'term-preview'
+    const p = document.createElement('div'); p.className = 'term-prompt'; p.textContent = '$ ai --usage'
+    const l1 = document.createElement('div'); l1.className = 'term-line'
+    l1.innerHTML = '<span class="term-key">GPT Plus</span><span class="term-bar">[░░░░░░░░░░]</span><span class="term-pct">0%</span>'
+    const l2 = document.createElement('div'); l2.className = 'term-line'
+    l2.innerHTML = '<span class="term-key">Antigravity</span><span class="term-bar warn">[██░░░░░░░░]</span><span class="term-pct warn">18%</span>'
+    const note = document.createElement('div'); note.className = 'term-note'; note.textContent = '  └─ agy Pro'
+    term.append(p, l1, l2, note)
+    body.append(term)
+  } else if (lay === 'rings') {
+    const rings = document.createElement('div'); rings.className = 'rings-preview'
+    const r1 = document.createElement('div'); r1.className = 'ring-preview-item'
+    r1.innerHTML = '<div class="mini-circle">0%</div><span>5 giờ</span>'
+    const r2 = document.createElement('div'); r2.className = 'ring-preview-item'
+    r2.innerHTML = '<div class="mini-circle warn">18%</div><span>Tuần</span>'
+    rings.append(r1, r2)
+    body.append(rings)
+  } else if (lay === 'strip') {
+    const strip = document.createElement('div'); strip.className = 'strip-preview'
+    const it1 = document.createElement('div'); it1.className = 'strip-item'
+    it1.innerHTML = '<span class="strip-tag">5H</span><div class="strip-track"><div class="strip-fill"></div></div><span class="strip-pct">0%</span>'
+    const it2 = document.createElement('div'); it2.className = 'strip-item'
+    it2.innerHTML = '<span class="strip-tag">Tuần</span><div class="strip-track"><div class="strip-fill warn"></div></div><span class="strip-pct warn">18%</span>'
+    it1.querySelector('.strip-fill').style.width = '4%'
+    it2.querySelector('.strip-fill').style.width = '18%'
+    strip.append(it1, it2)
+    body.append(strip)
+  } else {
+    const bars = document.createElement('div'); bars.className = 'bars-preview'
+    const row1 = document.createElement('div'); row1.className = 'row'
+    row1.innerHTML = '<div class="head"><span class="label">5 giờ</span><span class="pct">0%</span></div><div class="bar"><i class="ok"></i></div>'
+    const row2 = document.createElement('div'); row2.className = 'row'
+    row2.innerHTML = '<div class="head"><span class="label">Tuần</span><span class="pct warn">18%</span></div><div class="bar"><i class="warn"></i></div><div class="note">còn 5 ngày</div>'
+    row1.querySelector('.bar > i').style.width = '4%'
+    row2.querySelector('.bar > i').style.width = '18%'
+    bars.append(row1, row2)
+    body.append(bars)
+  }
 }
 
 function readValue(id) {
@@ -159,6 +212,7 @@ for (const id of FIELDS) {
   const delay = el.tagName === 'SELECT' || el.type === 'checkbox' ? 0 : (el.type === 'range' ? 120 : 500)
   el.addEventListener('input', () => {
     if (id === 'opacity') showOpacity()   // số % chạy theo tay kéo, không đợi debounce
+    if (id === 'layout' || id === 'palette') updatePreview()
     push({ [id]: readValue(id) }, delay)
   })
 }

@@ -22,12 +22,16 @@ const BASE = {
   alertsEnabled: true, alertWarnPct: 80, alertCritPct: 95, hotkey: 'Control+Alt+U',
   showContext: true, contextLimit: 'auto',
   launchAtLogin: false, alwaysOnTop: true, locked: false, providerOrder: [], topMetricOnly: false,
-  followClaudeCli: false,
+  followClaudeCli: false, showTrayTitle: false,
 }
 
 console.log('--- mục 11/12: khoá mới cũng đi qua đúng luật ép kiểu/allowlist ---')
 check('launchAtLogin: "yes" (không phải boolean) → giữ false', sanitizeConfig({ launchAtLogin: 'yes' }, BASE).launchAtLogin, false)
 check('alwaysOnTop: true hợp lệ → nhận', sanitizeConfig({ alwaysOnTop: false }, BASE).alwaysOnTop, false)
+check('showTrayTitle: true hợp lệ → nhận', sanitizeConfig({ showTrayTitle: true }, BASE).showTrayTitle, true)
+check('showTrayTitle: "true" (không phải boolean) → giữ false', sanitizeConfig({ showTrayTitle: 'true' }, BASE).showTrayTitle, false)
+check('palette oled hợp lệ → nhận', sanitizeConfig({ palette: 'oled' }, BASE).palette, 'oled')
+check('palette tokyo-night hợp lệ → nhận', sanitizeConfig({ palette: 'tokyo-night' }, BASE).palette, 'tokyo-night')
 check('followClaudeCli chỉ nhận boolean', sanitizeConfig({ followClaudeCli: 'yes' }, BASE).followClaudeCli, false)
 check('followClaudeCli: true hợp lệ → nhận', sanitizeConfig({ followClaudeCli: true }, BASE).followClaudeCli, true)
 check('providerOrder: null → giữ mảng cũ', sanitizeConfig({ providerOrder: null }, BASE).providerOrder, [])

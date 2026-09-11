@@ -10,7 +10,7 @@
 // usageTracker.js xuất `contextLimitFor` ra ngoài để test/context-limit.js kiểm không cần Electron.
 const CORNERS = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
 const LAYOUTS = ['bars', 'rings', 'strip', 'dashboard', 'terminal']
-const PALETTES = ['espresso', 'dark', 'light', 'default', 'catppuccin', 'dracula', 'nord', 'gruvbox']
+const PALETTES = ['espresso', 'dark', 'light', 'default', 'catppuccin', 'dracula', 'nord', 'gruvbox', 'oled', 'tokyo-night']
 const LANGS = ['auto', 'vi', 'en']
 
 function num(v, lo, hi, fallback) {
@@ -78,6 +78,7 @@ function sanitizeConfig(patch, base) {
   if ('terminalToggleHotkey' in p) out.terminalToggleHotkey = typeof p.terminalToggleHotkey === 'string' ? p.terminalToggleHotkey.trim() : base.terminalToggleHotkey
   if ('showContext' in p) out.showContext = bool(p.showContext, base.showContext)
   if ('contextLimit' in p) out.contextLimit = sanitizeContextLimit(p.contextLimit, base.contextLimit)
+  if ('showTrayTitle' in p) out.showTrayTitle = bool(p.showTrayTitle, base.showTrayTitle)
 
   // Quan hệ warn < crit — 2 mức trùng hoặc đảo ngược thì cảnh báo vàng/đỏ bắn lẫn lộn. Chỉ đẩy
   // khoá KHÔNG NẰM trong patch — đổi đúng khoá người dùng vừa đặt thì phải giữ, dịch khoá còn lại.
