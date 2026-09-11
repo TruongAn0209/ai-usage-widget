@@ -12,6 +12,10 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 if [ ! -f node_modules/electron/path.txt ] || [ ! -d "node_modules/electron/dist/Electron.app/Contents/Frameworks" ]; then
+  echo "==> Đang tải Electron prebuilt binary..."
+  node node_modules/electron/install.js || true
+fi
+if [ ! -f node_modules/electron/path.txt ] || [ ! -d "node_modules/electron/dist/Electron.app/Contents/Frameworks" ]; then
   echo "❌ Electron chưa được cài đầy đủ. Chạy: npm ci" >&2
   exit 1
 fi
@@ -24,7 +28,7 @@ rm -rf -- "$(pwd)/dist"
 # Ghi đè riêng cho bản kiểm thử: ký ad-hoc và tắt Hardened Runtime. `npm run dist` không có hai
 # ghi đè này, nên khi có Developer ID electron-builder sẽ dùng luồng ký phát hành chuẩn.
 CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac \
-  --config.mac.identity=- --config.mac.hardenedRuntime=false
+  --config.mac.identity=- --config.mac.hardenedRuntime=false --publish never
 
 echo "==> Xác minh chữ ký ad-hoc của cả hai app bundle..."
 for APP in "dist/mac/AI Usage Widget.app" "dist/mac-arm64/AI Usage Widget.app"; do
