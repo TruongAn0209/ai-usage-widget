@@ -389,8 +389,36 @@ body[data-layout='terminal'] * {
 
 .term-prompt {
   color: var(--accent);
-  font-size: 10.5px;
-  margin-bottom: 3px;
+  font-size: 10px;
+  margin-bottom: 4px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.term-note {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  opacity: 0.85;
+  margin: -2px 0 4px 6px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.term .provider-group-header {
+  font-size: 9.5px;
+  color: var(--accent);
+  letter-spacing: 0.8px;
+  margin: 6px 0 3px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--surface-2);
+  opacity: 0.85;
+}
+
+.term .provider-group-header::before {
+  content: '// ';
+  opacity: 0.5;
 }
 
 /* ---------- Panel mở rộng (dùng chung) ---------- */

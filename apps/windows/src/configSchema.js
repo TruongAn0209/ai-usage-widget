@@ -4,7 +4,7 @@ const SETTINGS_ENUMS = {
   lang: ['auto', 'vi', 'en'],
   layout: ['compact', 'standard', 'dashboard', 'terminal'],
   palette: ['default', 'espresso', 'light', 'catppuccin', 'dracula', 'nord', 'gruvbox',
-    'claude', 'codex', 'grok', 'gemini', 'antigravity'],
+    'claude', 'codex', 'grok', 'gemini', 'antigravity', 'oled', 'tokyo-night'],
   corner: ['top-right', 'top-left', 'bottom-right', 'bottom-left'],
   size: ['small', 'medium', 'large'],
 };

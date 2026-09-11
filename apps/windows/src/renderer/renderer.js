@@ -244,10 +244,11 @@ function layoutTerminalLines(metrics) {
       const color = metricColor(m);
       const filled = Math.round((pctWidth(m) / 100) * W);
       const bar = '█'.repeat(filled) + '░'.repeat(W - filled);
+      const noteHtml = m.note ? `<div class="term-note" title="${esc(m.note)}">  └─ ${esc(m.note)}</div>` : '';
       return (
         `<div class="term-line"><span class="term-key" title="${esc(m.label)}">${esc(m.label)}</span>` +
         `<span class="term-bar" style="color:${color}">[${bar}]</span>` +
-        `<span class="term-pct" style="color:${color}">${pctText(m)}</span></div>`
+        `<span class="term-pct" style="color:${color}">${pctText(m)}</span></div>${noteHtml}`
       );
     })
     .join('');

@@ -145,3 +145,37 @@ body[data-palette='gemini'] {
 body[data-palette='antigravity'] {
   --surface: #121c21; --surface-deep: #091115; --surface-2: rgba(152,246,220,.1); --row-surface: rgba(152,246,220,.045); --row-border: rgba(116,222,199,.22); --border: rgba(116,222,199,.56); --text: #e4fff8; --text-dim: #8eafa9; --accent: #72e0c5; --ok: #9ee493; --warn: #f3cb70; --crit: #ff8078; --ctx: #6fc7ff; --scoped: #c7a3ff; --btn-text: #0d2522;
 }
+
+/* 13. OLED Pure Black */
+body[data-palette='oled'] {
+  --surface: #060608;
+  --surface-deep: #000000;
+  --surface-2: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.2);
+  --text: #ffffff;
+  --text-dim: #888888;
+  --accent: #38bdf8;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --crit: #f87171;
+  --ctx: #34d399;
+  --scoped: #a78bfa;
+  --btn-text: #000000;
+}
+
+/* 14. Tokyo Night */
+body[data-palette='tokyo-night'] {
+  --surface: #1a1b26;
+  --surface-deep: #16161e;
+  --surface-2: rgba(115, 122, 162, 0.18);
+  --border: rgba(122, 162, 247, 0.3);
+  --text: #c0caf5;
+  --text-dim: #7a88cf;
+  --accent: #7aa2f7;
+  --ok: #9ece6a;
+  --warn: #e0af68;
+  --crit: #f7768e;
+  --ctx: #7dcfff;
+  --scoped: #bb9af7;
+  --btn-text: #1a1b26;
+}

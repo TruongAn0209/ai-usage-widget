@@ -173,7 +173,11 @@ function createWindow() {
     autoHiddenByWatcher = false
     win.hide()
   })
-  win.once('ready-to-show', () => { applyWindowGeometry(); pushAll() })
+  win.once('ready-to-show', () => {
+    applyWindowGeometry()
+    pushAll()
+    if (!config.followClaudeCli) win.showInactive()
+  })
 }
 
 // ---- Cảnh báo sắp chạm hạn mức -------------------------------------------------
@@ -698,18 +702,37 @@ function trySwapHotkey(newHotkey, oldHotkey) {
 //   `!module.parent` thay thế — true khi file này được nạp trực tiếp (không ai `require()` nó),
 //   false khi một file khác `require('./main.js')` gọi vào (đúng ý muốn ban đầu của guard này).
 if (!module.parent) {
-  app.whenReady().then(() => {
-    loadConfig()
-    if (app.dock) app.dock.hide()   // widget ở khay, không chiếm chỗ Dock
-    createWindow()
-    applyLoginItem()
-    buildTray()
-    registerHotkey()
-    startTimers()
-  })
-  app.on('window-all-closed', (e) => { e.preventDefault?.() })   // sống ở khay, đóng cửa sổ không thoát
-  app.on('before-quit', () => { isQuitting = true })   // cho close() thật đi qua khi bấm "Thoát"
-  app.on('will-quit', () => globalShortcut.unregisterAll())
+  const gotLock = app.requestSingleInstanceLock()
+  if (!gotLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', () => {
+      if (win) {
+        autoHiddenByWatcher = false
+        win.show()
+        applyWindowGeometry()
+      }
+    })
+    app.whenReady().then(() => {
+      loadConfig()
+      if (app.dock) app.dock.hide()   // widget ở khay, không chiếm chỗ Dock
+      createWindow()
+      applyLoginItem()
+      buildTray()
+      registerHotkey()
+      startTimers()
+    })
+    app.on('activate', () => {
+      if (win) {
+        autoHiddenByWatcher = false
+        win.show()
+        applyWindowGeometry()
+      }
+    })
+    app.on('window-all-closed', (e) => { e.preventDefault?.() })   // sống ở khay, đóng cửa sổ không thoát
+    app.on('before-quit', () => { isQuitting = true })   // cho close() thật đi qua khi bấm "Thoát"
+    app.on('will-quit', () => globalShortcut.unregisterAll())
+  }
 }
 
 // Xuất hàm THUẦN cho test/main-logic.js — chỉ dùng trong tiến trình test (chạy qua
