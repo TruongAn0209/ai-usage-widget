@@ -24,6 +24,7 @@ const VI = i18n.getStrings('vi', 'vi-VN')
 const ID = 'antigravity'
 const NAME = 'Antigravity'
 const RPC_PATH = '/exa.language_server_pb.LanguageServerService/GetUserStatus'
+const SUMMARY_PATH = '/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary'
 const SNAPSHOT = path.join(os.homedir(), 'Library', 'Application Support',
   'ai-usage-widget-mac', 'antigravity-snapshot.json')
 
@@ -89,9 +90,9 @@ async function findPorts(pid) {
   return ports
 }
 
-function rpc(scheme, port, csrfToken) {
+function rpc(scheme, port, csrfToken, rpcPath = RPC_PATH, bodyObj = { metadata: { ideName: 'antigravity', extensionName: 'antigravity', locale: 'en' } }) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({ metadata: { ideName: 'antigravity', extensionName: 'antigravity', locale: 'en' } })
+    const body = JSON.stringify(bodyObj || {})
     const headers = {
       'content-type': 'application/json',
       'content-length': Buffer.byteLength(body),
@@ -102,7 +103,7 @@ function rpc(scheme, port, csrfToken) {
 
     const mod = scheme === 'https' ? https : http
     const req = mod.request({
-      host: '127.0.0.1', port, path: RPC_PATH, method: 'POST',
+      host: '127.0.0.1', port, path: rpcPath, method: 'POST',
       headers,
       timeout: 8000,
       rejectUnauthorized: false,   // chứng chỉ tự ký của language server cục bộ
@@ -236,6 +237,46 @@ function toMetrics(json, strings = VI) {
 }
 
 // Có snapshot cũ (dưới 24 giờ) cũng tính là "tìm thấy" → mục Antigravity không biến mất ngay khi
+// Đọc cả hạn mức 5 giờ LẪN hạn mức Tuần (Weekly) từ endpoint RetrieveUserQuotaSummary chính thức.
+// Trả về danh sách gồm: Gemini · 5 giờ, Gemini · Tuần, Claude & GPT-OSS · 5 giờ, Claude & GPT-OSS · Tuần.
+function summaryToMetrics(json, strings = VI) {
+  const resp = (json && json.response) || {}
+  const groups = Array.isArray(resp.groups) ? resp.groups : []
+  if (!groups.length) return null
+
+  const metrics = []
+  for (const g of groups) {
+    const disp = String(g.displayName || '')
+    let family = strings.metricOther || 'Khác'
+    if (/gemini/i.test(disp)) family = 'Gemini'
+    else if (/claude/i.test(disp) || /gpt/i.test(disp)) family = 'Claude & GPT-OSS'
+    else if (disp) family = disp.replace(/models?/i, '').trim()
+
+    const buckets = Array.isArray(g.buckets) ? g.buckets : []
+    const sortedBuckets = [...buckets].sort((a, b) => {
+      const aW = a.window === 'weekly' || /week/i.test(a.bucketId || '') ? 1 : 0
+      const bW = b.window === 'weekly' || /week/i.test(b.bucketId || '') ? 1 : 0
+      return aW - bW
+    })
+
+    for (const b of sortedBuckets) {
+      if (b.remainingFraction == null) continue
+      const isWeek = b.window === 'weekly' || /week/i.test(b.bucketId || '') || /week/i.test(b.displayName || '')
+      const suffix = isWeek ? (strings.metricWeeklySuffix || ' · tuần') : (strings.metricFiveHourSuffix || ' · 5 giờ')
+      const t = b.resetTime ? new Date(b.resetTime).getTime() : null
+      metrics.push({
+        key: b.bucketId || `${family}-${isWeek ? 'weekly' : '5h'}`,
+        label: family + suffix,
+        pct: Math.max(0, Math.min(100, Math.round((1 - Number(b.remainingFraction)) * 1000) / 10)),
+        resetAt: Number.isFinite(t) ? t : null,
+        scoped: true,
+      })
+    }
+  }
+  return metrics.length ? metrics : null
+}
+
+// Có snapshot cũ (dưới 24 giờ) cũng tính là "tìm thấy" → mục Antigravity không biến mất ngay khi
 // Khi agy tắt, snapshot quá hạn thì không tính nữa để mục Antigravity
 // tự rụng khỏi danh sách thay vì bám mãi vào một con số nhiều ngày tuổi.
 function detect() {
@@ -255,14 +296,25 @@ async function fetchUsage(strings = VI) {
     return snap ? markStale(snap) : { ok: false, error: 'NOT_RUNNING' }
   }
 
-  let json
-  try { json = await rpc(cache.base.scheme, cache.base.port, cache.base.csrfToken) }
-  catch { cache.running = false; return { ok: false, error: 'NOT_RUNNING' } }
+  let quotaSummary = null
+  try {
+    quotaSummary = await rpc(cache.base.scheme, cache.base.port, cache.base.csrfToken, SUMMARY_PATH, {})
+  } catch { /* các bản agy cũ không có RetrieveUserQuotaSummary thì bỏ qua */ }
 
-  const us = json.userStatus || {}
+  let json = null
+  try {
+    json = await rpc(cache.base.scheme, cache.base.port, cache.base.csrfToken, RPC_PATH)
+  } catch {
+    if (!quotaSummary) {
+      cache.running = false
+      return { ok: false, error: 'NOT_RUNNING' }
+    }
+  }
+
+  const us = (json && json.userStatus) || {}
   const plan = ((us.planStatus || {}).planInfo || {}).planName || (us.userTier || {}).name || null
-  const metrics = toMetrics(json, strings)
-  if (metrics.length) saveSnapshot(metrics, plan)
+  const metrics = (quotaSummary && summaryToMetrics(quotaSummary, strings)) || toMetrics(json, strings)
+  if (metrics && metrics.length) saveSnapshot(metrics, plan)
   return { ok: true, plan, metrics }
 }
 
@@ -270,6 +322,6 @@ async function fetchUsage(strings = VI) {
 // đó đặt ra chỉ để tránh Anthropic trả 429). Bật `agy` lên là thấy trong ~15 giây, không phải 3 phút.
 module.exports = {
   id: ID, name: NAME, local: true, detect, fetchUsage,
-  _toMetrics: toMetrics, _isSnapshotFresh: isSnapshotFresh, _markStale: markStale,
+  _toMetrics: toMetrics, _summaryToMetrics: summaryToMetrics, _isSnapshotFresh: isSnapshotFresh, _markStale: markStale,
   SNAPSHOT_MAX_AGE_MS,
 }

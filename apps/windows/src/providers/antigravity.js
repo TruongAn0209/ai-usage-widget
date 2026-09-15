@@ -382,32 +382,68 @@ async function fetchUsage() {
   // ⛔ BO muc "Prompt credits" (An chot 23/07/2026): goi Pro khong con duoc cap pool nay
   // (Google chuyen credit thanh co che mua them), nen con so do chi gay nhieu chu khong
   // phai han muc that. Do duoc: monthlyPromptCredits=50000 nhung availablePromptCredits=500.
-  const scopedLimits = [];
+  // Doc ca han muc 5 gio LAN han muc Tuan (Weekly) tu RetrieveUserQuotaSummary
+  let summaryRes = null;
+  try {
+    summaryRes = await rpcRequest(
+      cache.isHttps,
+      cache.port,
+      '/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
+      {},
+      cache.csrfToken
+    );
+  } catch {}
 
-  // Cac model dung CHUNG 1 quota (remainingFraction + resetTime giong het nhau) -> gom lam 1
-  // muc hien thi, giong dung cach CLI that gom nhom "GEMINI MODELS" / "CLAUDE AND GPT MODELS".
-  const models = ((userStatus.cascadeModelConfigData || {}).clientModelConfigs || []).filter(
-    (m) => m.quotaInfo && m.quotaInfo.remainingFraction !== undefined
-  );
-  const groups = new Map();
-  for (const m of models) {
-    const key = m.quotaInfo.remainingFraction + '|' + (m.quotaInfo.resetTime || '');
-    if (!groups.has(key)) groups.set(key, { remainingFraction: m.quotaInfo.remainingFraction, resetTime: m.quotaInfo.resetTime, families: new Set() });
-    const family = String(m.label || m.modelId || '').split(' ')[0];
-    if (family) groups.get(key).families.add(family);
+  if (summaryRes && summaryRes.statusCode === 200) {
+    try {
+      const sJson = JSON.parse(summaryRes.body);
+      const groups = (sJson && sJson.response && sJson.response.groups) || [];
+      for (const g of groups) {
+        const disp = String(g.displayName || '');
+        let family = 'Khác';
+        if (/gemini/i.test(disp)) family = 'Gemini';
+        else if (/claude/i.test(disp) || /gpt/i.test(disp)) family = 'Claude & GPT-OSS';
+        else if (disp) family = disp.replace(/models?/i, '').trim();
+
+        const buckets = Array.isArray(g.buckets) ? g.buckets : [];
+        const sorted = [...buckets].sort((a, b) => {
+          const aW = a.window === 'weekly' || /week/i.test(a.bucketId || '') ? 1 : 0;
+          const bW = b.window === 'weekly' || /week/i.test(b.bucketId || '') ? 1 : 0;
+          return aW - bW;
+        });
+        for (const b of sorted) {
+          if (b.remainingFraction === undefined || b.remainingFraction === null) continue;
+          const isWeek = b.window === 'weekly' || /week/i.test(b.bucketId || '') || /week/i.test(b.displayName || '');
+          scopedLimits.push({
+            label: family + (isWeek ? ' · tuần' : ' · 5 giờ'),
+            pct: pct((1 - Number(b.remainingFraction)) * 100),
+            resetAt: toMs(b.resetTime),
+          });
+        }
+      }
+    } catch {}
   }
-  // Ghi ro DAY LA CUA SO 5 GIO. Do that 23/07/2026: resetTime cua moi nhom luon cach hien
-  // tai ~5 tieng -> RPC noi bo CHI tra han muc 5 gio. Man hinh chinh chu cua Antigravity
-  // con co "Weekly Limit" nhung so do KHONG co trong GetUserStatus, va da quet 13 ten RPC
-  // khac tren language server (GetUsageLimits/GetQuotaInfo/GetRateLimitStatus/...) deu 404
-  // -> Weekly phai hoi may chu Google, khong lay duoc tu may. KHONG bia ra muc Weekly.
-  for (const g of groups.values()) {
-    const family = [...g.families].slice(0, 3).join(' & ') || 'Models';
-    scopedLimits.push({
-      label: family + ' · 5 giờ',
-      pct: pct((1 - g.remainingFraction) * 100),
-      resetAt: toMs(g.resetTime),
-    });
+
+  // Fallback sang GetUserStatus neu ban agy cu khong co RetrieveUserQuotaSummary
+  if (scopedLimits.length === 0) {
+    const models = ((userStatus.cascadeModelConfigData || {}).clientModelConfigs || []).filter(
+      (m) => m.quotaInfo && m.quotaInfo.remainingFraction !== undefined
+    );
+    const groups = new Map();
+    for (const m of models) {
+      const key = m.quotaInfo.remainingFraction + '|' + (m.quotaInfo.resetTime || '');
+      if (!groups.has(key)) groups.set(key, { remainingFraction: m.quotaInfo.remainingFraction, resetTime: m.quotaInfo.resetTime, families: new Set() });
+      const family = String(m.label || m.modelId || '').split(' ')[0];
+      if (family) groups.get(key).families.add(family);
+    }
+    for (const g of groups.values()) {
+      const family = [...g.families].slice(0, 3).join(' & ') || 'Models';
+      scopedLimits.push({
+        label: family + ' · 5 giờ',
+        pct: pct((1 - g.remainingFraction) * 100),
+        resetAt: toMs(g.resetTime),
+      });
+    }
   }
 
   const result = {

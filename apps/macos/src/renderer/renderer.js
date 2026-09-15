@@ -137,7 +137,11 @@ function collect(data) {
       metrics = [top]
       const pinnedKeys = p.id === 'claude'
         ? ['5h', '7d']
-        : (p.id === 'codex' ? ['primary', 'secondary'] : [])
+        : (p.id === 'codex'
+            ? ['primary', 'secondary']
+            : (p.id === 'antigravity'
+                ? ['gemini-5h', 'gemini-weekly']
+                : []))
       for (const key of pinnedKeys) {
         const metric = p.metrics.find((m) => m.key === key)
         if (metric && !metrics.some((m) => m.key === metric.key)) metrics.push(metric)
