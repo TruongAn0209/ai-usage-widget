@@ -67,6 +67,20 @@ function extractCsrfToken(cmdline) {
   return m[1].replace(/^['"]|['"]$/g, '');
 }
 
+function resolveCsrfToken(cmdline) {
+  const fromCmd = extractCsrfToken(cmdline);
+  if (fromCmd) return fromCmd;
+  if (process.env.ANTIGRAVITY_CSRF_TOKEN) return process.env.ANTIGRAVITY_CSRF_TOKEN.trim();
+  try {
+    const p = path.join(os.homedir(), '.gemini', 'antigravity-cli', 'csrf_token');
+    if (fs.existsSync(p)) {
+      const t = fs.readFileSync(p, 'utf8').trim();
+      if (t) return t;
+    }
+  } catch {}
+  return null;
+}
+
 // Tim tien trinh Antigravity dang chay. CSRF token neu co trong cmdline thi lay them,
 // nhung khong bat buoc — CLI `agy` thuong khong dat token nao vao tham so ca.
 async function findCandidateProcesses() {
@@ -94,7 +108,7 @@ async function findCandidateProcessesWin32() {
   if (!parsed) return [];
   const list = Array.isArray(parsed) ? parsed : [parsed];
   return list
-    .map((p) => ({ pid: p.ProcessId, csrfToken: extractCsrfToken(p.CommandLine) }))
+    .map((p) => ({ pid: p.ProcessId, csrfToken: resolveCsrfToken(p.CommandLine) }))
     .filter((p) => p.pid);
 }
 
@@ -119,9 +133,10 @@ async function findCandidateProcessesUnix() {
     let csrfToken = null;
     try {
       const args = await execFileAsync('ps', ['-p', String(pid), '-o', 'command=']);
-      csrfToken = extractCsrfToken(args);
+      csrfToken = resolveCsrfToken(args);
     } catch {
       // khong lay duoc cmdline day du thi thoi, van dung PID nay khong CSRF
+      csrfToken = resolveCsrfToken(null);
     }
     list.push({ pid, csrfToken });
   }

@@ -37,14 +37,44 @@ const run = (cmd, args) => new Promise((resolve) => {
   execFile(cmd, args, { timeout: 6000 }, (err, stdout) => resolve(err ? '' : String(stdout)))
 })
 
-// PID của `agy` đang chạy. Dùng tên tiến trình chính xác (`-x`), không dùng `-f`: `-f` sẽ bắt
-// nhầm chính lệnh kiểm tra hoặc đường dẫn `antigravity.js` vì chúng cũng chứa chuỗi "agy".
-async function findPid() {
-  const out = await run('/usr/bin/pgrep', ['-i', '-x', 'agy'])
+// Tìm tất cả PID của tiến trình agy / antigravity đang chạy.
+// Dùng `ps -axo pid=,comm=` để không bị lọt khi agy được auto-update đổi tên thành `agy.<timestamp>.old`.
+async function findPids() {
+  const out = await run('/bin/ps', ['-axo', 'pid=,comm='])
+  const pids = []
   for (const line of out.split('\n')) {
-    const pid = parseInt(line.trim(), 10)
-    if (Number.isFinite(pid)) return pid
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const sp = trimmed.indexOf(' ')
+    if (sp < 0) continue
+    const pid = Number(trimmed.slice(0, sp))
+    const comm = trimmed.slice(sp + 1).trim()
+    if (!pid) continue
+    if (/(?:^|[\/])agy(?:\.|$)/i.test(comm) || /antigrav/i.test(comm)) {
+      pids.push(pid)
+    }
   }
+  return pids
+}
+
+function extractCsrfToken(cmdline) {
+  if (!cmdline) return null
+  let m = cmdline.match(/--csrf_token=("[^"]*"|'[^']*'|[^\s"']+)/)
+  if (!m) m = cmdline.match(/--csrf_token\s+("[^"]*"|'[^']*'|[^\s"']+)/)
+  return m ? m[1].replace(/^['"]|['"]$/g, '') : null
+}
+
+function resolveCsrfToken(cmdline) {
+  const fromCmd = extractCsrfToken(cmdline)
+  if (fromCmd) return fromCmd
+  if (process.env.ANTIGRAVITY_CSRF_TOKEN) return process.env.ANTIGRAVITY_CSRF_TOKEN.trim()
+  try {
+    const p = path.join(os.homedir(), '.gemini', 'antigravity-cli', 'csrf_token')
+    if (fs.existsSync(p)) {
+      const t = fs.readFileSync(p, 'utf8').trim()
+      if (t) return t
+    }
+  } catch {}
   return null
 }
 
@@ -59,13 +89,21 @@ async function findPorts(pid) {
   return ports
 }
 
-function rpc(scheme, port) {
+function rpc(scheme, port, csrfToken) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ metadata: { ideName: 'antigravity', extensionName: 'antigravity', locale: 'en' } })
+    const headers = {
+      'content-type': 'application/json',
+      'content-length': Buffer.byteLength(body),
+      'connect-protocol-version': '1',
+      'accept': 'application/json',
+    }
+    if (csrfToken) headers['x-codeium-csrf-token'] = csrfToken
+
     const mod = scheme === 'https' ? https : http
     const req = mod.request({
       host: '127.0.0.1', port, path: RPC_PATH, method: 'POST',
-      headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) },
+      headers,
       timeout: 8000,
       rejectUnauthorized: false,   // chứng chỉ tự ký của language server cục bộ
     }, (res) => {
@@ -84,12 +122,24 @@ function rpc(scheme, port) {
 
 // Tìm đúng cổng nói chuyện được, rồi nhớ lại để lần sau khỏi dò.
 async function scan() {
-  const pid = await findPid()
-  if (!pid) return { at: Date.now(), running: false, base: null }
-  for (const port of await findPorts(pid)) {
-    for (const scheme of ['https', 'http']) {
-      try { await rpc(scheme, port); return { at: Date.now(), running: true, base: { scheme, port } } }
-      catch { /* cổng này không phải, thử tiếp */ }
+  const pids = await findPids()
+  if (!pids.length) return { at: Date.now(), running: false, base: null }
+  for (const pid of pids) {
+    let cmdline = ''
+    try { cmdline = await run('/bin/ps', ['-p', String(pid), '-o', 'command=']) } catch {}
+    const token = resolveCsrfToken(cmdline)
+    const ports = await findPorts(pid)
+    for (const port of ports) {
+      for (const scheme of ['https', 'http']) {
+        for (const tok of token ? [token, null] : [null]) {
+          try {
+            await rpc(scheme, port, tok)
+            return { at: Date.now(), running: true, base: { scheme, port, csrfToken: tok } }
+          } catch {
+            /* thử tiếp */
+          }
+        }
+      }
     }
   }
   return { at: Date.now(), running: false, base: null }
@@ -206,11 +256,11 @@ async function fetchUsage(strings = VI) {
   }
 
   let json
-  try { json = await rpc(cache.base.scheme, cache.base.port) }
+  try { json = await rpc(cache.base.scheme, cache.base.port, cache.base.csrfToken) }
   catch { cache.running = false; return { ok: false, error: 'NOT_RUNNING' } }
 
   const us = json.userStatus || {}
-  const plan = ((us.planStatus || {}).planInfo || {}).planName || null
+  const plan = ((us.planStatus || {}).planInfo || {}).planName || (us.userTier || {}).name || null
   const metrics = toMetrics(json, strings)
   if (metrics.length) saveSnapshot(metrics, plan)
   return { ok: true, plan, metrics }
